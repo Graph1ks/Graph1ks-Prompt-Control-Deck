@@ -183,3 +183,99 @@ jobs:
             exit 1
           fi
           echo 'Repository artifact hygiene check passed'
+
+      - name: Protect public repository privacy
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+
+          python3 <<'PY'
+          import pathlib, re, subprocess
+
+          files = subprocess.check_output(['git', 'ls-files', '-z']).split(b'\0')
+          forbidden = []
+          secret_hits = []
+          private_email_hits = []
+          local_path_hits = []
+
+          archive_exts = ('.zip', '.7z', '.rar', '.tar', '.tgz', '.tar.gz')
+          db_exts = ('.db', '.db3', '.sqlite', '.sqlite3')
+          blocked_dirs = {'downloads', 'download', 'reports', 'report-output', 'backup', 'backups', 'scratch'}
+          secret_patterns = {
+              'github-token': re.compile(rb'\bgh[pousr]_[A-Za-z0-9_]{20,}\b'),
+              'github-pat': re.compile(rb'\bgithub_pat_[A-Za-z0-9_]{20,}\b'),
+              'openai-key': re.compile(rb'\bsk-[A-Za-z0-9_-]{20,}\b'),
+              'aws-access-key': re.compile(rb'\bAKIA[0-9A-Z]{16}\b'),
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
+          }
+          local_path_patterns = [
+              re.compile(rb'(?i)[A-Z]:\\Users\\[^\\\r\n]+'),
+              re.compile(rb'/Users/[^/\r\n]+/'),
+              re.compile(rb'/home/(?!runner(?:/|\b))[^/\r\n]+/'),
+          ]
+
+          for raw in files:
+              if not raw:
+                  continue
+              path = raw.decode('utf-8', 'surrogateescape')
+              p = pathlib.PurePosixPath(path)
+              lower = path.lower()
+              name = p.name.lower()
+              parts = {part.lower() for part in p.parts}
+
+              if name == '.env' or (name.startswith('.env.') and name != '.env.example'):
+                  forbidden.append(path)
+              elif name.endswith(('.pem', '.p12', '.pfx')) or (name.endswith('.key') and not name.endswith('.pub.key')):
+                  forbidden.append(path)
+              elif name.endswith(db_exts):
+                  forbidden.append(path)
+              elif name.endswith(archive_exts):
+                  forbidden.append(path)
+              elif parts & blocked_dirs:
+                  forbidden.append(path)
+
+              try:
+                  data = pathlib.Path(path).read_bytes()
+              except OSError:
+                  continue
+              if b'\0' in data[:8192]:
+                  continue
+
+              if b'graph1ks@outlook.com' in data.lower():
+                  private_email_hits.append(path)
+              for label, rx in secret_patterns.items():
+                  if rx.search(data):
+                      secret_hits.append((path, label))
+              if any(rx.search(data) for rx in local_path_patterns):
+                  local_path_hits.append(path)
+
+          problems = []
+          if forbidden:
+              problems.append('forbidden tracked paths: ' + ', '.join(sorted(set(forbidden))))
+          if secret_hits:
+              problems.append('secret-like patterns: ' + repr(sorted(set(secret_hits))))
+          if private_email_hits:
+              problems.append('private maintainer e-mail in tracked text: ' + ', '.join(sorted(set(private_email_hits))))
+          if local_path_hits:
+              problems.append('machine-local absolute paths: ' + ', '.join(sorted(set(local_path_hits))))
+          if problems:
+              raise SystemExit('\n'.join(problems))
+          print('Public repository privacy scan passed')
+          PY
+
+          if [ "$EVENT_NAME" = "push" ] && [ "$ACTOR" = "Graph1ks" ]; then
+            author_email=$(git log -1 --format='%ae')
+            committer_email=$(git log -1 --format='%ce')
+            test "$author_email" = '213925530+Graph1ks@users.noreply.github.com' || {
+              echo "Maintainer push used unexpected author e-mail" >&2
+              exit 1
+            }
+            case "$committer_email" in
+              '213925530+Graph1ks@users.noreply.github.com'|'noreply@github.com') ;;
+              *) echo "Maintainer push used unexpected committer e-mail" >&2; exit 1 ;;
+            esac
+            echo 'Maintainer commit identity is privacy-safe'
+          fi
