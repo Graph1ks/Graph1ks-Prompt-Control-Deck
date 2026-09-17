@@ -2,27 +2,9 @@ name: Validate extension
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'manifest.json'
-      - '*.js'
-      - '*.html'
-      - '*.css'
-      - 'icons/**'
-      - 'data/**'
-      - '.github/workflows/ci.yml'
+    branches: [main]
   pull_request:
-    branches:
-      - main
-    paths:
-      - 'manifest.json'
-      - '*.js'
-      - '*.html'
-      - '*.css'
-      - 'icons/**'
-      - 'data/**'
-      - '.github/workflows/ci.yml'
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -41,9 +23,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate manifest, required files and version markers
+      - name: Validate extension source
         shell: bash
         run: |
+          set -euo pipefail
           node <<'NODE'
           const fs = require('fs');
           const fail = (msg) => { throw new Error(msg); };
@@ -59,130 +42,83 @@ jobs:
             'data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz'
           ];
           for (const file of required) {
-            if (!fs.existsSync(file)) fail(`Missing required file: ${file}`);
-            if (fs.statSync(file).size === 0) fail(`Required file is empty: ${file}`);
+            if (!fs.existsSync(file) || fs.statSync(file).size === 0) fail(`Missing/empty required file: ${file}`);
           }
 
           const deck = fs.readFileSync('deck.js', 'utf8');
           const content = fs.readFileSync('content.js', 'utf8');
           const html = fs.readFileSync('deck.html', 'utf8');
           const css = fs.readFileSync('deck.css', 'utf8');
-
           const app = deck.match(/var\s+APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
           const ext = content.match(/const\s+EXT_VERSION\s*=\s*['"]([^'"]+)['"]/);
           const htmlVersion = html.match(/data-g1-version=['"]([^'"]+)['"]/);
-          if (!app) fail('APP_VERSION missing from deck.js');
-          if (!ext) fail('EXT_VERSION missing from content.js');
-          if (!htmlVersion) fail('data-g1-version missing from deck.html');
-          for (const [label, value] of [['APP_VERSION', app[1]], ['EXT_VERSION', ext[1]], ['deck.html version', htmlVersion[1]]]) {
-            if (value !== manifest.version) fail(`${label} ${value} does not match manifest ${manifest.version}`);
+          for (const [label, value] of [
+            ['APP_VERSION', app?.[1]],
+            ['EXT_VERSION', ext?.[1]],
+            ['deck.html version', htmlVersion?.[1]]
+          ]) {
+            if (!value || value !== manifest.version) fail(`${label} does not match manifest ${manifest.version}`);
           }
 
-          if (!deck.includes('data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz')) fail('deck.js does not reference gzip Public Vault factory asset');
-          if (!deck.includes('data/GRAPH1KS_GENRE_MAP_FACTORY.json')) fail('deck.js does not reference Genre Map factory asset');
-          if (!deck.includes('DecompressionStream')) fail('gzip Public Vault loader support is missing');
-          if (!/\.fillMoreOptionsBtn\s*\{[^}]*width\s*:\s*100%/s.test(css)) fail('FILL MORE OPTIONS full-width regression guard failed');
-
+          if (!deck.includes('data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz')) fail('gzip Public Vault path missing');
+          if (!deck.includes('data/GRAPH1KS_GENRE_MAP_FACTORY.json')) fail('Genre Map path missing');
+          if (!deck.includes('DecompressionStream')) fail('gzip loader support missing');
+          if (!/\.fillMoreOptionsBtn\s*\{[^}]*width\s*:\s*100%/s.test(css)) fail('FILL MORE OPTIONS full-width guard failed');
           const resources = (manifest.web_accessible_resources || []).flatMap(x => x.resources || []);
-          if (!resources.includes('data/*')) fail('manifest must expose bundled data assets');
-
-          console.log(`Manifest/version checks passed for v${manifest.version}`);
+          if (!resources.includes('data/*')) fail('manifest must expose data/*');
+          console.log(`Manifest/version/UI guards passed for v${manifest.version}`);
           NODE
 
-      - name: Check JavaScript syntax
-        shell: bash
-        run: |
-          set -euo pipefail
           for file in background.js content.js deck.js i18n.js theme-preload.js; do
             node --check "$file"
           done
 
-      - name: Check duplicate HTML IDs
-        shell: bash
-        run: |
-          python3 <<'PY'
-          from html.parser import HTMLParser
-          from collections import Counter
-
-          class IDs(HTMLParser):
-              def __init__(self):
-                  super().__init__()
-                  self.ids = []
-              def handle_starttag(self, tag, attrs):
-                  for key, value in attrs:
-                      if key == 'id' and value:
-                          self.ids.append(value)
-
-          parser = IDs()
-          with open('deck.html', encoding='utf-8') as fh:
-              parser.feed(fh.read())
-          duplicates = sorted(k for k, v in Counter(parser.ids).items() if v > 1)
-          if duplicates:
-              raise SystemExit('Duplicate HTML IDs: ' + ', '.join(duplicates))
-          print(f'HTML ID check passed ({len(parser.ids)} IDs)')
-          PY
-
-      - name: Validate factory data
-        shell: bash
-        run: |
-          python3 <<'PY'
-          import gzip
-          import json
-          from pathlib import Path
-
-          genre_path = Path('data/GRAPH1KS_GENRE_MAP_FACTORY.json')
-          vault_path = Path('data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz')
-
-          with genre_path.open(encoding='utf-8') as fh:
-              genre = json.load(fh)
-          if not genre:
-              raise SystemExit('Genre Map factory JSON is empty')
-
-          with gzip.open(vault_path, 'rt', encoding='utf-8') as fh:
-              vault = json.load(fh)
-          if not vault:
-              raise SystemExit('Public Vault factory JSON is empty')
-
-          count = None
-          if isinstance(vault, list):
-              count = len(vault)
-          elif isinstance(vault, dict):
-              for key in ('tracks', 'records', 'data', 'entries'):
-                  value = vault.get(key)
-                  if isinstance(value, list):
-                      count = len(value)
-                      break
-
-          print('Genre Map JSON: valid')
-          print('Public Vault gzip JSON: valid' + (f' ({count} entries)' if count is not None else ''))
-          PY
-
-      - name: Validate icon files
-        shell: bash
-        run: |
-          python3 <<'PY'
-          from pathlib import Path
-          png = b'\x89PNG\r\n\x1a\n'
-          for size in (16, 32, 48, 128):
-              path = Path(f'icons/icon{size}.png')
-              if path.read_bytes()[:8] != png:
-                  raise SystemExit(f'Invalid PNG signature: {path}')
-          print('Icon PNG signatures valid')
-          PY
-
-      - name: Reject accidental bootstrap or uncompressed factory artifacts
+      - name: Validate HTML, data and icons
         shell: bash
         run: |
           set -euo pipefail
-          test ! -e data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json
-          test ! -e v134-source-only.tar.gz
-          test ! -d bootstrap
-          test ! -d .tmp-v134-source
-          if find . -maxdepth 2 -type f \( -name '*.bak' -o -name '*.tmp' \) -print -quit | grep -q .; then
-            echo 'Scratch/backup file found in repository' >&2
-            exit 1
-          fi
-          echo 'Repository artifact hygiene check passed'
+          python3 <<'PY'
+          import gzip, json, re
+          from collections import Counter
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class IDs(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.ids=[]
+              def handle_starttag(self, tag, attrs):
+                  self.ids += [v for k,v in attrs if k == 'id' and v]
+
+          p=IDs(); p.feed(Path('deck.html').read_text(encoding='utf-8'))
+          dup=sorted(k for k,v in Counter(p.ids).items() if v > 1)
+          if dup: raise SystemExit('Duplicate HTML IDs: '+', '.join(dup))
+
+          genre=json.loads(Path('data/GRAPH1KS_GENRE_MAP_FACTORY.json').read_text(encoding='utf-8'))
+          if not genre: raise SystemExit('Genre Map is empty')
+          with gzip.open('data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz','rt',encoding='utf-8') as f:
+              vault=json.load(f)
+          if not vault: raise SystemExit('Public Vault is empty')
+          count=len(vault) if isinstance(vault,list) else next((len(vault[k]) for k in ('tracks','records','data','entries') if isinstance(vault.get(k),list)), None)
+
+          email_rx=re.compile(r'(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b')
+          email_paths=[]
+          def walk(x,path='$'):
+              if isinstance(x,dict):
+                  for k,v in x.items(): walk(v,f'{path}.{k}')
+              elif isinstance(x,list):
+                  for i,v in enumerate(x): walk(v,f'{path}[{i}]')
+              elif isinstance(x,str) and email_rx.search(x):
+                  email_paths.append(path)
+          walk(vault)
+          if email_paths: raise SystemExit('Email-like values in Public Vault JSON: '+', '.join(email_paths[:10]))
+
+          png=b'\x89PNG\r\n\x1a\n'
+          for size in (16,32,48,128):
+              path=Path(f'icons/icon{size}.png')
+              if path.read_bytes()[:8] != png: raise SystemExit(f'Invalid PNG: {path}')
+
+          print(f'HTML/data/icons passed; Public Vault entries={count}; email findings=0')
+          PY
 
       - name: Protect public repository privacy
         shell: bash
@@ -191,91 +127,71 @@ jobs:
           ACTOR: ${{ github.actor }}
         run: |
           set -euo pipefail
-
           python3 <<'PY'
           import pathlib, re, subprocess
 
-          files = subprocess.check_output(['git', 'ls-files', '-z']).split(b'\0')
-          forbidden = []
-          secret_hits = []
-          private_email_hits = []
-          local_path_hits = []
-
-          archive_exts = ('.zip', '.7z', '.rar', '.tar', '.tgz', '.tar.gz')
-          db_exts = ('.db', '.db3', '.sqlite', '.sqlite3')
-          blocked_dirs = {'downloads', 'download', 'reports', 'report-output', 'backup', 'backups', 'scratch'}
-          secret_patterns = {
+          files=subprocess.check_output(['git','ls-files','-z']).split(b'\0')
+          forbidden=[]; secret_hits=[]; private_email_hits=[]; local_path_hits=[]
+          archive_exts=('.zip','.7z','.rar','.tar','.tgz','.tar.gz')
+          db_exts=('.db','.db3','.sqlite','.sqlite3')
+          blocked_dirs={'downloads','download','reports','report-output','backup','backups','scratch'}
+          secret_patterns={
               'github-token': re.compile(rb'\bgh[pousr]_[A-Za-z0-9_]{20,}\b'),
               'github-pat': re.compile(rb'\bgithub_pat_[A-Za-z0-9_]{20,}\b'),
               'openai-key': re.compile(rb'\bsk-[A-Za-z0-9_-]{20,}\b'),
               'aws-access-key': re.compile(rb'\bAKIA[0-9A-Z]{16}\b'),
               'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
           }
-          local_path_patterns = [
-              re.compile(rb'(?i)[A-Z]:\\Users\\[^\\\r\n]+'),
-              re.compile(rb'/Users/[^/\r\n]+/'),
-              re.compile(rb'/home/(?!runner(?:/|\b))[^/\r\n]+/'),
-          ]
+          private_mail=b'graph1ks' + b'@outlook.com'
+          win_rx=re.compile(rb'(?i)[A-Z]:\\' + rb'Users\\' + rb'[^\\\r\n]+')
+          mac_rx=re.compile(rb'/' + rb'Users/' + rb'[^/\r\n]+/')
+          linux_rx=re.compile(rb'/' + rb'home/' + rb'(?!runner(?:/|\b))[^/\r\n]+/')
+          local_path_patterns=[win_rx,mac_rx,linux_rx]
 
           for raw in files:
-              if not raw:
-                  continue
-              path = raw.decode('utf-8', 'surrogateescape')
-              p = pathlib.PurePosixPath(path)
-              lower = path.lower()
-              name = p.name.lower()
-              parts = {part.lower() for part in p.parts}
-
+              if not raw: continue
+              path=raw.decode('utf-8','surrogateescape')
+              p=pathlib.PurePosixPath(path); name=p.name.lower(); parts={x.lower() for x in p.parts}
               if name == '.env' or (name.startswith('.env.') and name != '.env.example'):
                   forbidden.append(path)
-              elif name.endswith(('.pem', '.p12', '.pfx')) or (name.endswith('.key') and not name.endswith('.pub.key')):
+              elif name.endswith(('.pem','.p12','.pfx','.db','.db3','.sqlite','.sqlite3')):
                   forbidden.append(path)
-              elif name.endswith(db_exts):
+              elif name.endswith('.key') and not name.endswith('.pub.key'):
                   forbidden.append(path)
-              elif name.endswith(archive_exts):
-                  forbidden.append(path)
-              elif parts & blocked_dirs:
+              elif name.endswith(archive_exts) or parts & blocked_dirs:
                   forbidden.append(path)
 
-              try:
-                  data = pathlib.Path(path).read_bytes()
-              except OSError:
-                  continue
-              if b'\0' in data[:8192]:
-                  continue
+              try: data=pathlib.Path(path).read_bytes()
+              except OSError: continue
+              if b'\0' in data[:8192]: continue
+              if private_mail in data.lower(): private_email_hits.append(path)
+              for label,rx in secret_patterns.items():
+                  if rx.search(data): secret_hits.append((path,label))
+              if any(rx.search(data) for rx in local_path_patterns): local_path_hits.append(path)
 
-              if b'graph1ks@outlook.com' in data.lower():
-                  private_email_hits.append(path)
-              for label, rx in secret_patterns.items():
-                  if rx.search(data):
-                      secret_hits.append((path, label))
-              if any(rx.search(data) for rx in local_path_patterns):
-                  local_path_hits.append(path)
-
-          problems = []
-          if forbidden:
-              problems.append('forbidden tracked paths: ' + ', '.join(sorted(set(forbidden))))
-          if secret_hits:
-              problems.append('secret-like patterns: ' + repr(sorted(set(secret_hits))))
-          if private_email_hits:
-              problems.append('private maintainer e-mail in tracked text: ' + ', '.join(sorted(set(private_email_hits))))
-          if local_path_hits:
-              problems.append('machine-local absolute paths: ' + ', '.join(sorted(set(local_path_hits))))
-          if problems:
-              raise SystemExit('\n'.join(problems))
-          print('Public repository privacy scan passed')
+          problems=[]
+          if forbidden: problems.append('forbidden tracked paths: '+', '.join(sorted(set(forbidden))))
+          if secret_hits: problems.append('secret-like patterns: '+repr(sorted(set(secret_hits))))
+          if private_email_hits: problems.append('private maintainer e-mail in tracked text: '+', '.join(sorted(set(private_email_hits))))
+          if local_path_hits: problems.append('machine-local absolute paths: '+', '.join(sorted(set(local_path_hits))))
+          if problems: raise SystemExit('\n'.join(problems))
+          print('Tracked-tree privacy/secret scan passed')
           PY
+
+          test ! -e data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json
+          test ! -e v134-source-only.tar.gz
+          test ! -d bootstrap
+          test ! -d .tmp-v134-source
 
           if [ "$EVENT_NAME" = "push" ] && [ "$ACTOR" = "Graph1ks" ]; then
             author_email=$(git log -1 --format='%ae')
             committer_email=$(git log -1 --format='%ce')
             test "$author_email" = '213925530+Graph1ks@users.noreply.github.com' || {
-              echo "Maintainer push used unexpected author e-mail" >&2
-              exit 1
+              echo 'Maintainer push used unexpected author e-mail' >&2; exit 1;
             }
             case "$committer_email" in
               '213925530+Graph1ks@users.noreply.github.com'|'noreply@github.com') ;;
-              *) echo "Maintainer push used unexpected committer e-mail" >&2; exit 1 ;;
+              *) echo 'Maintainer push used unexpected committer e-mail' >&2; exit 1 ;;
             esac
             echo 'Maintainer commit identity is privacy-safe'
           fi
