@@ -142,3 +142,14 @@ Default to one working branch per coherent task, feature, bug-fix batch or relea
 - Use path filters so documentation-only changes do not run extension validation unnecessarily.
 - Use `concurrency` with `cancel-in-progress: true` for PR validation so outdated runs are cancelled when a newer commit supersedes them.
 - Avoid duplicate workflows that validate the same thing on both branch push and pull request unless there is a specific reason.
+
+## 13. Public identity and repository privacy
+
+This is a public repository. Maintainer-authored Git commits must not expose a private e-mail address.
+
+- Use `Graph1ks <213925530+Graph1ks@users.noreply.github.com>` for maintainer-authored Author and Committer identity.
+- GitHub-generated `GitHub <noreply@github.com>` metadata is acceptable where GitHub itself is the committer.
+- Never commit `.env` files, credentials, tokens, private keys, browser/session data, local databases, machine-specific absolute paths, local Downloads, generated reports, debug dumps, personal-data exports, or release/scratch archives that do not belong in source control.
+- Before making a private/local repository public, audit advertised branches, tags, commit metadata and all reachable historical blobs — not only the current working tree.
+- If an actual credential is ever committed, removing the file is insufficient: rotate or revoke the credential immediately and purge it from reachable Git history.
+- Do not reintroduce rewritten/private history by pushing an old local clone after a public-history reset; re-clone or explicitly reset the local repository to the new public root first.
