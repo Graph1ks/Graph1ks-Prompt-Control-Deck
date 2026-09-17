@@ -27,6 +27,31 @@ CI runs on relevant source/data changes to `main`, relevant pull requests and ma
 
 `concurrency` with `cancel-in-progress` prevents stale runs from consuming runner time when a newer commit supersedes them.
 
+## Git identity privacy
+
+For maintainer-authored local commits, use the GitHub noreply identity rather than a private mailbox:
+
+```bash
+git config user.name "Graph1ks"
+git config user.email "213925530+Graph1ks@users.noreply.github.com"
+```
+
+To make this the default for all local repositories, use `--global` on both commands:
+
+```bash
+git config --global user.name "Graph1ks"
+git config --global user.email "213925530+Graph1ks@users.noreply.github.com"
+```
+
+Verify before committing:
+
+```bash
+git config --get user.name
+git config --get user.email
+```
+
+After any public-history rewrite, do not push from an old clone that still contains the removed history. Re-clone the repository or explicitly reset the local clone to the new public root before resuming work.
+
 ## Local validation
 
 Before pushing a code change, run the relevant checks locally when possible.
