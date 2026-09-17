@@ -78,7 +78,12 @@ Rules:
 - treat `.json.gz` as a first-class runtime asset;
 - client-side gzip decompression is expected in supported Chromium versions;
 - factory imports/migrations must not destroy user-created Private Vault data;
-- genre-map replacement/import must validate schema and canonical mappings before committing changes.
+- genre-map replacement/import must validate schema and canonical mappings before committing changes;
+- treat `reference_artist` and `reference_song` as provenance/catalog metadata only, not as generation instructions;
+- do not inject `reference_artist` or `reference_song` into song-generation prompts unless Graph1ks explicitly changes this architecture after reviewing the associated rights implications;
+- inside `instrumental_arrangement`, terms such as `source`, `original motif`, `original register`, or similar wording refer to the generated structured prompt/concept established inside that entry, not to the commercial reference recording;
+- do not add unlicensed lyrics, audio, notation, artwork, copied reviews, raw chart histories, or third-party bulk datasets merely because they are publicly accessible;
+- keep `docs/DATA_PROVENANCE.md` accurate when the research or generation pipeline changes materially.
 
 ## 7. Privacy and network behavior
 

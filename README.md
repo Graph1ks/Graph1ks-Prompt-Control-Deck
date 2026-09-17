@@ -59,7 +59,9 @@ data/
 
 The Public Vault is deliberately stored as gzip-compressed JSON and decompressed client-side by the extension. The repository and release package should not contain an unnecessary uncompressed duplicate.
 
-The current factory Vault contains more than 10,000 prompt/song entries. See [data/README.md](data/README.md) for data-specific rules.
+The current factory Vault contains more than 10,000 prompt/song entries. See [data/README.md](data/README.md) for data-specific rules and [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) for the research/generation pipeline, reference-field semantics, third-party identifiers, and licensing scope.
+
+`reference_artist` and `reference_song` are provenance/catalog metadata only; they identify the research target and are not intended to be used as artist-name or song-title imitation instructions in the song-generation workflow.
 
 ## Repository layout
 
@@ -88,7 +90,8 @@ Read these before making non-trivial changes:
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution and pull-request rules;
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — practical development workflow;
 - [docs/RELEASING.md](docs/RELEASING.md) — release discipline and versioning;
-- [docs/HANDOVER.md](docs/HANDOVER.md) — current project state and next-action context.
+- [docs/HANDOVER.md](docs/HANDOVER.md) — current project state and next-action context;
+- [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) — Public Vault provenance and third-party-reference policy.
 
 ### CI
 
@@ -101,13 +104,15 @@ It validates:
 - JavaScript syntax;
 - duplicate HTML IDs;
 - bundled Genre Map JSON;
-- gzip Public Vault JSON;
+- gzip Public Vault JSON and absence of e-mail-like values;
 - icon PNG signatures;
 - gzip loading support in the runtime source;
 - the full-width `FILL MORE OPTIONS` regression guard;
-- absence of temporary bootstrap/scratch artifacts.
+- absence of temporary bootstrap/scratch artifacts;
+- tracked-tree privacy/secret hygiene;
+- privacy-safe maintainer Author/Committer e-mail metadata on direct maintainer pushes.
 
-CI runs on relevant source/data changes to `main`, on relevant pull requests, and manually. Documentation-only commits do not trigger it.
+CI runs on pushes to `main`, pull requests targeting `main`, and manual dispatch. `concurrency` with cancellation prevents stale overlapping runs.
 
 ## Branching and change batching
 
@@ -133,16 +138,22 @@ The public license does **not** grant commercial-use rights.
 
 Selling, monetizing, commercially redistributing, bundling, hosting or incorporating this project into a commercial product or service requires a separate written commercial license from Graph1ks.
 
+A Graph1ks commercial license can grant only rights that Graph1ks owns or is otherwise entitled to license; it does not grant rights in third-party names, trademarks, recordings, compositions, lyrics, artwork, databases, or other third-party material merely because those items are referenced by project metadata.
+
 See [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md).
 
 ## Security
 
 Do not publish security-sensitive findings as public issues. See [SECURITY.md](SECURITY.md).
 
-## Third-party service notice
+## Third-party references and service notice
 
-This is an independent project and is not affiliated with or endorsed by Suno.
+This is an independent project and is not affiliated with or endorsed by Suno, referenced artists, record labels, publishers, chart providers, or other third parties.
+
+Artist names, song titles, trademarks, and similar identifiers may appear in factory data solely for identification, reference, and research provenance. No ownership of third-party names, recordings, compositions, lyrics, artwork, or trademarks is claimed by their inclusion.
+
+See [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md).
 
 ## Copyright
 
-Copyright © 2026 Graph1ks. Rights are granted only as expressly stated in the repository license or a separate written commercial agreement.
+Copyright © 2026 Graph1ks. Rights are granted only as expressly stated in the repository license or a separate written commercial agreement, and only to the extent Graph1ks owns or is otherwise entitled to license those rights.

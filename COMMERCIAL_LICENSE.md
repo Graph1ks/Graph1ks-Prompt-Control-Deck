@@ -17,6 +17,10 @@ A commercial license may be offered under separately negotiated terms, which may
 
 No commercial permission is granted merely because this repository is public, forkable, or accessible on GitHub.
 
+Any commercial license from Graph1ks can grant only rights that Graph1ks owns or is otherwise legally entitled to license. It does not grant rights in third-party artist names, song titles, trademarks, musical compositions, sound recordings, lyrics, artwork, databases, or other third-party material merely because such material is referenced by project metadata.
+
+Users remain responsible for obtaining any separate third-party permissions required for their intended use.
+
 For a commercial licensing inquiry, contact Graph1ks through the GitHub profile or another contact channel publicly provided by Graph1ks.
 
 This document describes licensing policy and does not itself grant any commercial rights.
