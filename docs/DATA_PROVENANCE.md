@@ -75,6 +75,18 @@ They identify the real-world recording that originally motivated the research en
 
 By design, these fields are not song-creation instructions and are not used as artist-name or song-title imitation prompts. The generation workflow operates on the independently synthesized musical description contained in the prompt data.
 
+### Verified implementation in v1.3.4
+
+The current v1.3.4 autofill implementation was checked against this policy.
+
+- `deck.js` stores `reference_artist` and `reference_song` as index/provenance fields and exposes them for searching, inspection, and database management.
+- The Suno page content script (`content.js`) does not access either `reference_artist` or `reference_song`.
+- The actual Suno autofill path writes the generated `structured_prompt` to Styles, `instrumental_arrangement` to the arrangement/lyrics field, and `negative_prompt` to Exclude when More Options filling is enabled.
+- Supported advanced-option values are filled separately from their own stored fields. Stored Voice metadata remains retrieval/display metadata and is not auto-selected.
+- A track object may contain additional database metadata while being routed through extension messaging; metadata merely being present in a transport object does not make it generation input. The content-script autofill implementation consumes explicit generation fields and does not consume the reference artist/song fields.
+
+The permanent CI workflow contains a regression guard that fails if `content.js` begins referencing `reference_artist` or `reference_song`. This makes the provenance/generation separation an enforced project invariant rather than documentation only.
+
 Future changes must preserve this separation unless Graph1ks explicitly approves a different design and the associated licensing/legal implications have been reviewed.
 
 ## Third-party names, titles, and marks
@@ -148,7 +160,8 @@ When changing the Public Vault or its generation pipeline:
 3. do not add raw chart-history fields merely for provenance convenience when they are not required by the product;
 4. do not add copied lyrics, reviews, artwork, audio, or other expressive third-party material without a clear right to do so;
 5. document any new bulk-data source and its redistribution terms before including substantial source data in the repository;
-6. update this document if the research/generation architecture materially changes.
+6. keep the CI regression guard that prevents the Suno content-script generation path from consuming `reference_artist` or `reference_song`;
+7. update this document if the research/generation architecture materially changes.
 
 ## No endorsement
 

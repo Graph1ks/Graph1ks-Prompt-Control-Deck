@@ -66,7 +66,16 @@ jobs:
           if (!/\.fillMoreOptionsBtn\s*\{[^}]*width\s*:\s*100%/s.test(css)) fail('FILL MORE OPTIONS full-width guard failed');
           const resources = (manifest.web_accessible_resources || []).flatMap(x => x.resources || []);
           if (!resources.includes('data/*')) fail('manifest must expose data/*');
-          console.log(`Manifest/version/UI guards passed for v${manifest.version}`);
+
+          // Provenance invariant: third-party artist/song reference metadata must
+          // remain outside the Suno page's generation/autofill implementation.
+          for (const field of ['reference_artist', 'reference_song']) {
+            if (content.includes(field)) {
+              fail(`${field} must remain provenance-only and outside content.js autofill logic`);
+            }
+          }
+
+          console.log(`Manifest/version/UI/provenance guards passed for v${manifest.version}`);
           NODE
 
           for file in background.js content.js deck.js i18n.js theme-preload.js; do
