@@ -1,0 +1,185 @@
+name: Validate extension
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'manifest.json'
+      - '*.js'
+      - '*.html'
+      - '*.css'
+      - 'icons/**'
+      - 'data/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'manifest.json'
+      - '*.js'
+      - '*.html'
+      - '*.css'
+      - 'icons/**'
+      - 'data/**'
+      - '.github/workflows/ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate manifest, required files and version markers
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const fail = (msg) => { throw new Error(msg); };
+          const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+          if (manifest.manifest_version !== 3) fail('manifest_version must be 3');
+          if (!/^\d+\.\d+\.\d+$/.test(manifest.version || '')) fail('Invalid manifest version');
+
+          const required = [
+            'background.js', 'content.js', 'deck.html', 'deck.css', 'deck.js',
+            'i18n.js', 'theme-preload.js',
+            'icons/icon16.png', 'icons/icon32.png', 'icons/icon48.png', 'icons/icon128.png',
+            'data/GRAPH1KS_GENRE_MAP_FACTORY.json',
+            'data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz'
+          ];
+          for (const file of required) {
+            if (!fs.existsSync(file)) fail(`Missing required file: ${file}`);
+            if (fs.statSync(file).size === 0) fail(`Required file is empty: ${file}`);
+          }
+
+          const deck = fs.readFileSync('deck.js', 'utf8');
+          const content = fs.readFileSync('content.js', 'utf8');
+          const html = fs.readFileSync('deck.html', 'utf8');
+          const css = fs.readFileSync('deck.css', 'utf8');
+
+          const app = deck.match(/var\s+APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+          const ext = content.match(/const\s+EXT_VERSION\s*=\s*['"]([^'"]+)['"]/);
+          const htmlVersion = html.match(/data-g1-version=['"]([^'"]+)['"]/);
+          if (!app) fail('APP_VERSION missing from deck.js');
+          if (!ext) fail('EXT_VERSION missing from content.js');
+          if (!htmlVersion) fail('data-g1-version missing from deck.html');
+          for (const [label, value] of [['APP_VERSION', app[1]], ['EXT_VERSION', ext[1]], ['deck.html version', htmlVersion[1]]]) {
+            if (value !== manifest.version) fail(`${label} ${value} does not match manifest ${manifest.version}`);
+          }
+
+          if (!deck.includes('data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz')) fail('deck.js does not reference gzip Public Vault factory asset');
+          if (!deck.includes('data/GRAPH1KS_GENRE_MAP_FACTORY.json')) fail('deck.js does not reference Genre Map factory asset');
+          if (!deck.includes('DecompressionStream')) fail('gzip Public Vault loader support is missing');
+          if (!/\.fillMoreOptionsBtn\s*\{[^}]*width\s*:\s*100%/s.test(css)) fail('FILL MORE OPTIONS full-width regression guard failed');
+
+          const resources = (manifest.web_accessible_resources || []).flatMap(x => x.resources || []);
+          if (!resources.includes('data/*')) fail('manifest must expose bundled data assets');
+
+          console.log(`Manifest/version checks passed for v${manifest.version}`);
+          NODE
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in background.js content.js deck.js i18n.js theme-preload.js; do
+            node --check "$file"
+          done
+
+      - name: Check duplicate HTML IDs
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from html.parser import HTMLParser
+          from collections import Counter
+
+          class IDs(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = []
+              def handle_starttag(self, tag, attrs):
+                  for key, value in attrs:
+                      if key == 'id' and value:
+                          self.ids.append(value)
+
+          parser = IDs()
+          with open('deck.html', encoding='utf-8') as fh:
+              parser.feed(fh.read())
+          duplicates = sorted(k for k, v in Counter(parser.ids).items() if v > 1)
+          if duplicates:
+              raise SystemExit('Duplicate HTML IDs: ' + ', '.join(duplicates))
+          print(f'HTML ID check passed ({len(parser.ids)} IDs)')
+          PY
+
+      - name: Validate factory data
+        shell: bash
+        run: |
+          python3 <<'PY'
+          import gzip
+          import json
+          from pathlib import Path
+
+          genre_path = Path('data/GRAPH1KS_GENRE_MAP_FACTORY.json')
+          vault_path = Path('data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz')
+
+          with genre_path.open(encoding='utf-8') as fh:
+              genre = json.load(fh)
+          if not genre:
+              raise SystemExit('Genre Map factory JSON is empty')
+
+          with gzip.open(vault_path, 'rt', encoding='utf-8') as fh:
+              vault = json.load(fh)
+          if not vault:
+              raise SystemExit('Public Vault factory JSON is empty')
+
+          count = None
+          if isinstance(vault, list):
+              count = len(vault)
+          elif isinstance(vault, dict):
+              for key in ('tracks', 'records', 'data', 'entries'):
+                  value = vault.get(key)
+                  if isinstance(value, list):
+                      count = len(value)
+                      break
+
+          print('Genre Map JSON: valid')
+          print('Public Vault gzip JSON: valid' + (f' ({count} entries)' if count is not None else ''))
+          PY
+
+      - name: Validate icon files
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          png = b'\x89PNG\r\n\x1a\n'
+          for size in (16, 32, 48, 128):
+              path = Path(f'icons/icon{size}.png')
+              if path.read_bytes()[:8] != png:
+                  raise SystemExit(f'Invalid PNG signature: {path}')
+          print('Icon PNG signatures valid')
+          PY
+
+      - name: Reject accidental bootstrap or uncompressed factory artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json
+          test ! -e v134-source-only.tar.gz
+          test ! -d bootstrap
+          test ! -d .tmp-v134-source
+          if find . -maxdepth 2 -type f \( -name '*.bak' -o -name '*.tmp' \) -print -quit | grep -q .; then
+            echo 'Scratch/backup file found in repository' >&2
+            exit 1
+          fi
+          echo 'Repository artifact hygiene check passed'

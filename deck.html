@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en" data-g1-version="1.3.4">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GRAPH1KS Prompt Control Deck</title>
+  <script src="theme-preload.js"></script>
+  <link rel="stylesheet" href="deck.css">
+</head>
+<body>
+<div id="deckHost">
+  <div id="deckRoot">
+    <header class="topbar">
+      <div class="brand"><span class="brandMark">G1</span><div><strong>GRAPH1KS</strong><small>Prompt Control Deck · v1.3.4</small></div></div>
+      <div class="topActions compactMenus">
+        <button id="languageToggle" class="languageToggle" type="button" title="Auf Deutsch umstellen" aria-label="Auf Deutsch umstellen"><span class="languageFlag" aria-hidden="true"><svg class="flagSvg" viewBox="0 0 60 30" focusable="false" aria-hidden="true"><defs><clipPath id="g1UkSaltire"><path d="M30 15h30v15zM30 15v15H0zM30 15H0V0zM30 15V0h30z"/></clipPath></defs><rect width="60" height="30" fill="#012169"/><path d="M0 0L60 30M60 0L0 30" stroke="#FFFFFF" stroke-width="6"/><path d="M0 0L60 30M60 0L0 30" clip-path="url(#g1UkSaltire)" stroke="#C8102E" stroke-width="4"/><path d="M30 0V30M0 15H60" stroke="#FFFFFF" stroke-width="10"/><path d="M30 0V30M0 15H60" stroke="#C8102E" stroke-width="6"/></svg></span><span class="languageCode">EN</span></button>
+        <button id="themeToggle" class="themeToggle" type="button" title="Switch to Light Mode" aria-label="Switch appearance">☾ DARK</button>
+        <div id="surfaceActions" class="surfaceActions">
+          <button id="overlayAutoHideBtn" class="surfaceBtn hidden" title="When enabled, the overlay slides fully offscreen and reappears at the right edge">AUTO-HIDE</button>
+          <button id="surfaceSwitchBtn" class="surfaceBtn surfaceSwitchBtn" title="Move the Control Deck between the Suno overlay and its own window">↗ POP OUT</button>
+        </div>
+        <details class="topMenu">
+          <summary>DATA ▾</summary>
+          <div class="topMenuPanel">
+            <button id="importDbBtn">Import Active Vault DB</button>
+            <button id="exportDbBtn">Export Active Vault DB</button>
+            <div class="menuDivider"></div>
+            <button id="exportGenresBtn">Export Genres</button>
+            <button id="importGenreMapBtn">Import Genre Map</button>
+          </div>
+        </details>
+        <details class="topMenu">
+          <summary>TOOLS ▾</summary>
+          <div class="topMenuPanel">
+            <button id="dbManagerBtn" class="managerLaunch">DB Manager</button>
+            <button id="topmostBtn" class="hidden" title="Open the Deck in Chrome Document Picture-in-Picture so it stays above other windows">Always on Top</button>
+            <button id="sideBtn">Sidebar ↔</button>
+            <div class="menuDivider"></div>
+            <button id="guidedTourBtn" title="Replay the interactive extension tour">GUIDED TOUR</button>
+            <div class="toolRangeControl" id="overlayOpacityControl">
+              <label for="overlayOpacityRange"><span>Overlay opacity</span><strong id="overlayOpacityValue">100%</strong></label>
+              <input id="overlayOpacityRange" type="range" min="60" max="100" step="1" value="100" title="Overlay opacity: 60% to 100%">
+            </div>
+          </div>
+        </details>
+        <details class="topMenu dangerMenu">
+          <summary>DATABASE ▾</summary>
+          <div class="topMenuPanel">
+            <button id="restorePublicVaultBtn" title="Replace the current Public Vault tracks and genre map with the factory data bundled in this release">Restore Factory PUBLIC Vault</button>
+            <div class="menuDivider"></div>
+            <button id="deleteDbBtn" class="dangerGhost">Delete Active Vault Data</button>
+          </div>
+        </details>
+      </div>
+    </header>
+
+    <input id="dbFileInput" type="file" accept="application/json,application/gzip,application/x-gzip,.json,.json.gz,.gz" hidden>
+    <input id="genreMapFileInput" type="file" accept="application/json,application/gzip,application/x-gzip,.json,.json.gz,.gz" hidden>
+    <input id="dbmRulesFileInput" type="file" accept="application/json,application/gzip,application/x-gzip,.json,.json.gz,.gz" hidden>
+    <input id="dbmPatchFileInput" type="file" accept="application/json,application/gzip,application/x-gzip,.json,.json.gz,.gz" hidden>
+
+    <div class="vaultBar">
+      <div class="vaultModeSwitch" role="tablist" aria-label="Database Vault">
+        <button id="publicVaultTab" class="vaultMode active" data-vault-mode="public">PUBLIC VAULT</button>
+        <button id="privateVaultTab" class="vaultMode" data-vault-mode="private">PRIVATE VAULT</button>
+      </div>
+      <div id="privateVaultControls" class="privateVaultControls hidden">
+        <select id="privateVaultSelect" class="hidden" aria-label="Switch Private Vault Suno artist account" title="Switch between Private Vaults belonging to different Suno artist accounts"></select>
+        <div id="privateIdentityWrap" class="privateIdentityWrap hidden">
+          <a id="privateIdentityCurrent" class="privateIdentityCurrent" href="#" target="_blank" rel="noopener" title="Current Suno identity"></a>
+          <div id="privateIdentityHistory" class="privateIdentityHistory" role="tooltip"></div>
+        </div>
+        <button id="privateIdentityUpdateBtn" class="identityUpdateBtn" title="Read the currently signed-in account identity from the active Suno tab">UPDATE FROM SUNO</button>
+      </div>
+      <div id="activeVaultInfo" class="activeVaultInfo">PUBLIC VAULT · established reference database</div>
+      <button id="vaultEditorBtn" class="vaultEditorBtn" title="Create a song manually in the active Private Vault">EDITOR MODE</button>
+      <button id="retrieveActiveBtn" class="retrieveMainBtn" title="Retrieve active Suno Create/Song into the matching Private Vault">R · RETRIEVE</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="searchBox">
+        <input id="searchInput" type="search" placeholder="Search tracks…" autocomplete="off">
+        <button id="clearSearchBtn" class="searchClear" aria-label="Clear search">×</button>
+      </div>
+      <select id="searchField">
+        <option value="all">All fields</option><option value="title">Title</option><option value="genre">Genre</option>
+        <option value="bpm">BPM</option><option value="emotion">Emotion</option><option value="year">Year</option>
+        <option value="reference_artist">Reference artist</option><option value="reference_song">Reference song</option>
+      </select>
+      <div class="genrePickerWrap">
+        <button id="genrePickerBtn" class="genreTrigger">All Genres <span id="genreTriggerCount">0</span> ▾</button>
+        <div id="genrePicker" class="genrePicker hidden">
+          <div class="majorHead">
+            <div class="majorHeadLeft">
+              <button id="genreOpenSelectedBtn" class="majorActionPrimary" disabled>SHOW</button>
+              <button id="genreRandomToggleBtn" class="genreRandomToggleBtn" aria-expanded="false">RANDOM SELECTION</button>
+            </div>
+            <span>GRAPH1KS 24 MAJOR GENRES</span>
+            <button id="genreAllBtn">RESET FILTERS</button>
+          </div>
+          <div id="majorGenreGrid" class="majorGenreGrid"></div>
+
+          <div id="genreRandomPanel" class="genreRandomPanel hidden">
+            <div class="genreRandomHead">
+              <div>
+                <strong>RANDOM SELECTOR</strong>
+                <span id="genreRandomScope">ALL MAJORS</span>
+              </div>
+              <span id="genreRandomAvailability" class="genreRandomAvailability"></span>
+            </div>
+            <div class="genreRandomControls">
+              <label>
+                <span>FROM YEAR</span>
+                <input id="genreRandomFromYear" type="number" min="0" max="9999" inputmode="numeric" placeholder="1958">
+              </label>
+              <label>
+                <span>TO YEAR</span>
+                <input id="genreRandomToYear" type="number" min="0" max="9999" inputmode="numeric" placeholder="1988">
+              </label>
+              <label>
+                <span>SONGS / YEAR</span>
+                <input id="genreRandomPerYear" type="number" min="1" max="99" inputmode="numeric" value="1">
+              </label>
+              <button id="genreRandomAddBtn" class="genreRandomAddBtn">RANDOM</button>
+            </div>
+            <div id="genreRandomResult" class="genreRandomResult">
+              RANDOM replaces the current Random View · blank FROM + TO = full range · one filled year = single-year mode
+            </div>
+          </div>
+
+          <div class="collectedHead"><span>COLLECTED GENRES</span><span id="unmappedBadge" class="unmappedBadge"></span></div>
+          <div class="genreSearchBox"><input id="genreSearchInput" type="search" placeholder="Search collected genres…"><button id="clearGenreSearchBtn">×</button></div>
+          <div id="collectedGenreList" class="collectedGenreList"></div>
+        </div>
+      </div>
+      <select id="sortSelect">
+        <option value="id-asc">ID ↑</option><option value="id-desc">ID ↓</option><option value="title-asc">Title A–Z</option>
+        <option value="genre-asc">Genre A–Z</option><option value="bpm-asc">BPM ↑</option><option value="bpm-desc">BPM ↓</option>
+        <option value="emotion-asc">Emotion A–Z</option><option value="year-asc">Year ↑</option><option value="year-desc">Year ↓</option>
+        <option value="reference_artist-asc">Artist A–Z</option><option value="reference_song-asc">Song A–Z</option>
+      </select>
+      <select id="statusFilter"><option value="all">All</option><option value="unused">Unused</option><option value="used">Used</option><option value="favorite">Favorites</option></select>
+    </div>
+
+    <div class="batchbar">
+      <button id="selectVisibleBtn">Select Visible</button><button id="clearSelectionBtn">Clear Selection</button>
+      <button id="markSelectedUsedBtn">✓ Mark Used</button><button id="markSelectedUnusedBtn">Mark Unused</button>
+      <button id="markSelectedFavoriteBtn">★ Favorite</button><button id="markSelectedUnfavoriteBtn">☆ Unfavorite</button>
+      <button id="deleteSelectedBtn" class="dangerGhost">Delete Selected</button>
+      <button id="clearRandomViewBtn" class="randomViewChip hidden" title="Leave Random View">RANDOM VIEW ×</button>
+      <span id="selectionInfo">0 selected</span><span id="dbStats" class="dbStats"></span>
+    </div>
+
+    <section id="dbManager" class="dbManager hidden">
+      <div class="dbmHeader">
+        <div>
+          <strong>DATABASE MANAGER</strong>
+          <span>active-vault bulk replace · normalize · patch · undo</span>
+        </div>
+        <div class="dbmHeaderActions">
+          <span id="dbmManagerStats" class="dbmManagerStats"></span>
+          <button id="dbmCloseBtn">CLOSE</button>
+        </div>
+      </div>
+
+      <div class="dbmTabs">
+        <button class="dbmTab active" data-dbm-tab="replace">REPLACE / MERGE</button>
+        <button class="dbmTab" data-dbm-tab="normalize">NORMALIZE VALUES</button>
+        <button class="dbmTab" data-dbm-tab="patch">PATCH / UPDATE JSON</button>
+        <button class="dbmTab" data-dbm-tab="history">HISTORY / RULES</button>
+      </div>
+
+      <div class="dbmWorkspace">
+        <div class="dbmMain">
+          <div id="dbmReplacePane" class="dbmPane active">
+            <div class="dbmControlGrid">
+              <label>Field
+                <select id="dbmField">
+                  <option value="genre">Genre</option>
+                  <option value="emotion">Emotion</option>
+                  <option value="style">Style Tag</option>
+                  <option value="key">Key</option>
+                  <option value="reference_artist">Reference Artist</option>
+                  <option value="reference_song">Reference Song</option>
+                  <option value="title">Title</option>
+                  <option value="bpm">BPM</option>
+                  <option value="year">Year</option>
+                  <option value="created_at">Creation Date</option>
+                  <option value="artist_name">Artist</option>
+                  <option value="used">Used</option>
+                  <option value="favorite">Favorite</option>
+                  <option value="structured_prompt">Style</option>
+                  <option value="negative_prompt">Negative Prompt</option>
+                  <option value="instrumental_arrangement">Lyrics/Arrangement</option>
+                </select>
+              </label>
+              <label>Scope
+                <select id="dbmScope">
+                  <option value="all">Entire database</option>
+                  <option value="visible">Current filtered view</option>
+                  <option value="selected">Selected tracks</option>
+                  <option value="used">Used tracks</option>
+                  <option value="unused">Unused tracks</option>
+                  <option value="favorite">Favorite tracks</option>
+                </select>
+              </label>
+              <label>Match
+                <select id="dbmMatchMode">
+                  <option value="exact_ci">Exact · ignore case</option>
+                  <option value="exact">Exact · case sensitive</option>
+                  <option value="contains">Contains</option>
+                  <option value="starts">Starts with</option>
+                  <option value="ends">Ends with</option>
+                  <option value="regex">Regular expression</option>
+                </select>
+              </label>
+              <label>Action
+                <select id="dbmReplaceMode">
+                  <option value="whole">Replace whole value</option>
+                  <option value="matched">Replace matched portion</option>
+                  <option value="prepend">Prepend</option>
+                  <option value="append">Append</option>
+                  <option value="clear">Clear value</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="dbmTextGrid">
+              <label>Find
+                <textarea id="dbmFind" rows="3" placeholder="Value or pattern to find…"></textarea>
+              </label>
+              <label>Replace with
+                <textarea id="dbmReplace" rows="3" placeholder="Canonical / replacement value…"></textarea>
+              </label>
+            </div>
+
+            <div class="dbmOptions">
+              <label><input id="dbmCaseSensitive" type="checkbox"> Case-sensitive Contains / Starts / Ends / Regex</label>
+              <label><input id="dbmMoveGenreRelationships" type="checkbox" checked> Genre rename: merge / move Major Genre relationships</label>
+              <label><input id="dbmRememberCanonical" type="checkbox" checked> Exact replacement: remember as canonical for future imports</label>
+            </div>
+
+            <div class="dbmActions">
+              <button id="dbmAnalyzeValuesBtn">ANALYZE VALUES</button>
+              <button id="dbmPreviewBtn" class="primary">PREVIEW CHANGES</button>
+              <button id="dbmSaveRuleBtn">SAVE AS RULE</button>
+            </div>
+
+            <div class="dbmSection">
+              <div class="dbmSectionHead">
+                <strong>DISTINCT VALUES</strong>
+                <span id="dbmDistinctSummary">Choose a lightweight field and analyze.</span>
+              </div>
+              <div id="dbmDistinctList" class="dbmValueList">
+                <div class="dbmEmpty">No value analysis yet.</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="dbmNormalizePane" class="dbmPane">
+            <div class="dbmControlGrid normalizeGrid">
+              <label>Field
+                <select id="dbmNormalizeField">
+                  <option value="genre">Genre</option>
+                  <option value="emotion">Emotion</option>
+                  <option value="style">Style Tag</option>
+                  <option value="key">Key</option>
+                  <option value="reference_artist">Reference Artist</option>
+                  <option value="reference_song">Reference Song</option>
+                </select>
+              </label>
+              <label>Scope
+                <select id="dbmNormalizeScope">
+                  <option value="all">Entire database</option>
+                  <option value="visible">Current filtered view</option>
+                  <option value="selected">Selected tracks</option>
+                  <option value="used">Used tracks</option>
+                  <option value="unused">Unused tracks</option>
+                  <option value="favorite">Favorite tracks</option>
+                </select>
+              </label>
+              <label class="dbmWideToggle">
+                <input id="dbmAutoNormalizeImports" type="checkbox" checked>
+                Apply saved canonical spellings automatically to future DB imports
+              </label>
+            </div>
+
+            <div class="dbmActions">
+              <button id="dbmAnalyzeVariantsBtn">ANALYZE SAFE VARIANTS</button>
+              <button id="dbmSelectVariantGroupsBtn">SELECT ALL GROUPS</button>
+              <button id="dbmClearVariantGroupsBtn">CLEAR</button>
+              <button id="dbmPreviewNormalizeBtn" class="primary">PREVIEW NORMALIZATION</button>
+            </div>
+
+            <div class="dbmHint">
+              Safe variants differ only by case, Unicode form or whitespace. Punctuation differences are not auto-merged.
+              Canonical spellings applied here are remembered for future imports.
+            </div>
+
+            <div id="dbmVariantGroups" class="dbmVariantGroups">
+              <div class="dbmEmpty">Analyze a field to find variants such as “Easy Listening”, “easy listening” and “Easy listening”.</div>
+            </div>
+          </div>
+
+          <div id="dbmPatchPane" class="dbmPane">
+            <div class="dbmPatchIntro">
+              <div>
+                <strong>PATCH / UPDATE JSON</strong>
+                <span>Partial database updates. Only the declared field is changed; everything else stays untouched.</span>
+              </div>
+              <button id="dbmPatchHelpBtn">FORMAT HELP</button>
+            </div>
+            <div class="dbmActions">
+              <button id="dbmLoadPatchBtn" class="primary">LOAD PATCH JSON</button>
+              <button id="dbmClearPatchBtn">CLEAR PATCH</button>
+            </div>
+            <div id="dbmPatchSummary" class="dbmPatchSummary">No patch loaded.</div>
+            <div class="dbmHint">
+              Patches are preview-only until you press APPLY PREVIEWED CHANGES. Match by GRAPH1KS ID or, in Private Vaults, by Suno Song ID.
+            </div>
+          </div>
+
+          <div id="dbmHistoryPane" class="dbmPane">
+            <div class="dbmHistoryRulesGrid">
+              <div class="dbmSection">
+                <div class="dbmSectionHead">
+                  <strong>UNDO HISTORY</strong>
+                  <button id="dbmRefreshHistoryBtn">REFRESH</button>
+                </div>
+                <div id="dbmHistoryList" class="dbmHistoryList"></div>
+              </div>
+
+              <div class="dbmSection">
+                <div class="dbmSectionHead">
+                  <strong>SAVED CLEANUP RULES</strong>
+                  <div>
+                    <button id="dbmImportRulesBtn">IMPORT</button>
+                    <button id="dbmExportRulesBtn">EXPORT</button>
+                  </div>
+                </div>
+                <div class="dbmHint">Load a saved rule into Replace / Merge, preview it, then apply. Rules never execute silently.</div>
+                <div id="dbmRulesList" class="dbmRulesList"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="dbmPreview">
+          <div class="dbmPreviewHead">
+            <div>
+              <strong>CHANGE PREVIEW</strong>
+              <span id="dbmPreviewSummary">No preview calculated.</span>
+            </div>
+            <button id="dbmClearPreviewBtn">CLEAR</button>
+          </div>
+
+          <div id="dbmProgressWrap" class="dbmProgressWrap hidden">
+            <progress id="dbmProgress" value="0" max="100"></progress>
+            <span id="dbmProgressText">0 / 0</span>
+          </div>
+
+          <div id="dbmPreviewTableWrap" class="dbmPreviewTableWrap">
+            <div class="dbmEmpty">Run a preview before applying any database change.</div>
+          </div>
+
+          <div class="dbmApplyBar">
+            <button id="dbmApplyBtn" class="apply" disabled>APPLY PREVIEWED CHANGES</button>
+            <button id="dbmCancelBtn" class="dangerGhost" disabled>CANCEL</button>
+          </div>
+          <div id="dbmStatus" class="dbmStatus"></div>
+        </aside>
+      </div>
+    </section>
+
+    <main id="mainLayout" class="mainLayout sidebar-right inspector-hidden">
+      <section class="tablePane">
+        <div class="tableScroll">
+          <table><thead><tr>
+            <th class="checkCol"></th><th>ID</th><th>Title</th><th>Genre</th><th>Major</th><th>BPM</th><th>Emotion</th><th>Year</th><th id="artistColumnHead">Reference Artist</th><th id="songColumnHead">Reference Song</th><th id="sunoSettingsColumnHead">Suno Settings</th><th>Used</th><th>Fav</th>
+          </tr></thead><tbody id="trackBody"></tbody></table>
+        </div>
+        <div id="emptyState" class="emptyState hidden">No tracks match the current filters.</div>
+      </section>
+      <aside id="inspector" class="inspector"></aside>
+    </main>
+
+
+    <section id="vaultEditorModal" class="vaultEditorModal hidden" aria-hidden="true">
+      <div class="vaultEditorCard">
+        <div class="vaultEditorHead">
+          <div>
+            <strong>VAULT EDITOR</strong>
+            <span>Manual song entry · active Private Vault</span>
+          </div>
+          <button id="vaultEditorCloseBtn" type="button">CLOSE</button>
+        </div>
+
+        <div class="vaultEditorGrid">
+          <div class="vaultEditorField vaultEditorTitleField">
+            <div class="vaultEditorLabelRow"><label for="vaultEditorTitle">Title</label><span class="charCounter" data-counter-for="vaultEditorTitle">0 / 80</span></div>
+            <input id="vaultEditorTitle" type="text" maxlength="80" autocomplete="off" placeholder="Title…">
+          </div>
+
+          <div class="vaultEditorField vaultEditorMetaField">
+            <div class="vaultEditorLabelRow"><label for="vaultEditorBpm">BPM</label></div>
+            <input id="vaultEditorBpm" type="number" min="0" max="999" step="1" inputmode="numeric" placeholder="Auto from Style or enter manually">
+          </div>
+
+          <div class="vaultEditorField vaultEditorMetaField">
+            <div class="vaultEditorLabelRow"><label for="vaultEditorYear">Year</label></div>
+            <input id="vaultEditorYear" type="number" min="0" max="2099" step="1" inputmode="numeric" placeholder="Auto from Style or enter manually">
+          </div>
+
+          <div class="vaultEditorField vaultEditorMetaField">
+            <div class="vaultEditorLabelRow"><label for="vaultEditorMajorGenre">Major Genre(s)</label></div>
+            <select id="vaultEditorMajorGenre"><option value="">Major Genre…</option></select>
+            <div id="vaultEditorMajorGenreAutoList" class="vaultEditorMajorGenreAutoList hidden" aria-live="polite"></div>
+            <div id="vaultEditorMajorGenreHint" class="vaultEditorRelationHint">Optional: choose a Major Genre, or enter a mapped Subgenre to fill it automatically.</div>
+          </div>
+
+          <div class="vaultEditorField vaultEditorMetaField vaultEditorSubgenreField">
+            <div class="vaultEditorLabelRow"><label for="vaultEditorSubgenre">Subgenre</label></div>
+            <div class="vaultEditorSuggestWrap">
+              <input id="vaultEditorSubgenre" type="text" autocomplete="off" placeholder="Type to search canonical subgenres…" aria-autocomplete="list" aria-controls="vaultEditorSubgenreSuggest" aria-expanded="false">
+              <div id="vaultEditorSubgenreSuggest" class="vaultEditorSubgenreSuggest hidden" role="listbox"></div>
+            </div>
+          </div>
+
+          <div class="vaultEditorSectionTitle">SUNO MORE OPTIONS</div>
+          <div class="vaultEditorField vaultEditorMetaField"><div class="vaultEditorLabelRow"><label for="vaultEditorVoiceName">Voice Name</label></div><input id="vaultEditorVoiceName" type="text" autocomplete="off" placeholder="Selected Suno voice…"></div>
+          <div class="vaultEditorField vaultEditorMetaField"><div class="vaultEditorLabelRow"><label for="vaultEditorVoiceUrl">Voice URL</label></div><input id="vaultEditorVoiceUrl" type="url" autocomplete="off" placeholder="https://suno.com/voice/…"></div>
+          <div class="vaultEditorField vaultEditorMetaField"><div class="vaultEditorLabelRow"><label for="vaultEditorVocalGender">Vocal Gender</label></div><select id="vaultEditorVocalGender"><option value="">—</option><option>Male</option><option>Female</option></select></div>
+          <div class="vaultEditorField vaultEditorMetaField"><div class="vaultEditorLabelRow"><label for="vaultEditorDuration">Duration</label></div><input id="vaultEditorDuration" type="text" autocomplete="off" placeholder="AUTO or 3:35"></div>
+          <div class="vaultEditorField vaultEditorMetaField"><div class="vaultEditorLabelRow"><label for="vaultEditorMaxMode">Max Mode</label></div><select id="vaultEditorMaxMode"><option value="">—</option><option>Off</option><option>On</option></select></div>
+          <div class="vaultEditorField vaultEditorMetaField"><div class="vaultEditorLabelRow"><label for="vaultEditorWeirdness">Weirdness</label></div><input id="vaultEditorWeirdness" type="number" min="0" max="100" step="1" placeholder="0–100"></div>
+          <div class="vaultEditorField vaultEditorMetaField"><div class="vaultEditorLabelRow"><label for="vaultEditorStyleInfluence">Style Influence</label></div><input id="vaultEditorStyleInfluence" type="number" min="0" max="100" step="1" placeholder="0–100"></div>
+          <div class="vaultEditorField vaultEditorMetaField"><div class="vaultEditorLabelRow"><label for="vaultEditorAudioInfluence">Audio Influence</label></div><input id="vaultEditorAudioInfluence" type="number" min="0" max="100" step="1" placeholder="0–100"></div>
+          <div class="vaultEditorField vaultEditorMetaField"><div class="vaultEditorLabelRow"><label for="vaultEditorVariety">Variety</label></div><select id="vaultEditorVariety"><option value="">—</option><option>Off</option><option>Normal</option><option>High</option><option>Extra</option><option>Max</option></select></div>
+
+          <div class="vaultEditorSectionTitle">SONG CONTENT</div>
+          <div class="vaultEditorField vaultEditorStyleField">
+            <div class="vaultEditorLabelRow"><label for="vaultEditorStyle">Style</label><div class="vaultEditorLabelActions"><button class="autoFitBtn" type="button" data-autofit-key="structured_prompt" data-autofit-target="#vaultEditorStyle">AUTO FIT</button><span class="charCounter" data-counter-for="vaultEditorStyle">0 / 1000</span></div></div>
+            <textarea id="vaultEditorStyle" data-autofit-field="structured_prompt" maxlength="1000" rows="10" placeholder="Style prompt…"></textarea>
+          </div>
+
+          <div class="vaultEditorField vaultEditorNegativeField">
+            <div class="vaultEditorLabelRow"><label for="vaultEditorNegative">Negative Prompt / Exclusion</label><span class="charCounter" data-counter-for="vaultEditorNegative">0 / 1000</span></div>
+            <textarea id="vaultEditorNegative" maxlength="1000" rows="7" placeholder="Excluded styles / negative prompt…"></textarea>
+          </div>
+
+          <div class="vaultEditorField vaultEditorLyricsField">
+            <div class="vaultEditorLabelRow"><label for="vaultEditorLyrics">Lyrics/Arrangement</label><div class="vaultEditorLabelActions"><button class="autoFitBtn" type="button" data-autofit-key="instrumental_arrangement" data-autofit-target="#vaultEditorLyrics">AUTO FIT</button><span class="charCounter" data-counter-for="vaultEditorLyrics">0 / 5000</span></div></div>
+            <textarea id="vaultEditorLyrics" data-autofit-field="instrumental_arrangement" maxlength="5000" rows="18" placeholder="Lyrics / arrangement…"></textarea>
+          </div>
+        </div>
+
+        <div class="vaultEditorActions">
+          <span id="vaultEditorStatus" class="vaultEditorStatus"></span>
+          <button id="vaultEditorCancelBtn" type="button">CANCEL</button>
+          <button id="vaultEditorSaveBtn" class="vaultPrimary" type="button" disabled>SAVE TO PRIVATE VAULT</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="retrieveTitleModal" class="retrieveTitleModal hidden" aria-hidden="true">
+      <div class="retrieveTitleCard">
+        <strong>TITLE REQUIRED</strong>
+        <p>Suno's current Create form has no title. Give this retrieved item a title before it can be saved to the Private Vault.</p>
+        <input id="retrieveTitleInput" type="text" maxlength="80" placeholder="Title…" autocomplete="off">
+        <div class="retrieveTitleActions">
+          <button id="retrieveTitleCancelBtn">CANCEL</button>
+          <button id="retrieveTitleSaveBtn" class="vaultPrimary" disabled>SAVE TO PRIVATE VAULT</button>
+        </div>
+      </div>
+    </section>
+
+
+    <section id="dbmPatchHelpModal" class="retrieveTitleModal hidden" aria-hidden="true">
+      <div class="retrieveTitleCard patchHelpCard">
+        <strong>GRAPH1KS PATCH / UPDATE JSON</strong>
+        <p>A patch changes one declared field only. It never replaces whole track records.</p>
+        <pre>{
+  "schema": "graph1ks-db-patch-v1",
+  "field": "instrumental_arrangement",
+  "match_by": "id",
+  "updates": [
+    { "id": 1851, "value": "[Intro]\n..." },
+    { "id": 1852, "value": "[Verse]\n..." }
+  ]
+}</pre>
+        <p><b>Single-song patch:</b> use one update object. <b>All arrangements:</b> include one update for every song you want changed.</p>
+        <p><b>Private Vault matching:</b> set <code>"match_by": "suno_song_id"</code> and use <code>"suno_song_id"</code> in each update.</p>
+        <p><b>Protected provenance:</b> Private Vault patches cannot modify Artist identity/profile fields, Suno Song ID/link, source URL, record type/retrieval identity, Reference Artist or Reference Song. Those fields are refreshed only from authoritative Suno retrieval/identity updates.</p>
+        <p>Accepted field aliases: <code>arrangement</code>/<code>lyrics</code> → <code>instrumental_arrangement</code>, <code>styles</code> → <code>structured_prompt</code>, <code>exclude</code> → <code>negative_prompt</code>.</p>
+        <p>You may use <code>updates[]</code>, <code>records[]</code>, or <code>tracks[]</code>. The value may be stored as <code>value</code> or under the declared field name, for example <code>{"id":1851,"instrumental_arrangement":"..."}</code>. Extra fields are ignored.</p>
+        <div class="retrieveTitleActions"><button id="dbmPatchHelpCloseBtn" class="vaultPrimary">CLOSE</button></div>
+      </div>
+    </section>
+    <div id="toast" class="toast hidden"></div>
+    <div id="importStatus" class="importStatus hidden"></div>
+  </div>
+</div>
+<script src="i18n.js"></script>
+<script src="deck.js"></script>
+</body>
+</html>

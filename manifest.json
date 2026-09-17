@@ -1,0 +1,73 @@
+{
+  "manifest_version": 3,
+  "name": "GRAPH1KS Prompt Control Deck",
+  "version": "1.3.4",
+  "description": "v1.3.4: restores the compact Suno metadata presentation and adds native gzip JSON database support.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage",
+    "tabs",
+    "windows",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://suno.com/*",
+    "https://www.suno.com/*",
+    "https://studio-api.prod.suno.com/*",
+    "https://studio-api-prod.suno.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Toggle GRAPH1KS Prompt Control Deck on Suno",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "commands": {
+    "open-control-deck": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+G"
+      },
+      "description": "Open GRAPH1KS Prompt Control Deck"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://suno.com/*",
+        "https://www.suno.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "deck.html",
+        "deck.css",
+        "deck.js",
+        "i18n.js",
+        "data/*",
+        "icons/*"
+      ],
+      "matches": [
+        "https://suno.com/*",
+        "https://www.suno.com/*"
+      ]
+    }
+  ]
+}

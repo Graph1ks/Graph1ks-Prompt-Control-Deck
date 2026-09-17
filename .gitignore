@@ -1,0 +1,94 @@
+# OS / filesystem
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs / temp files
+*.log
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+
+# Local environment / credentials
+.env
+.env.*
+*.env
+.envrc
+!.env.example
+credentials.json
+credential.json
+secrets.json
+secret.json
+tokens.json
+token.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# Local databases / state
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+
+# Node / package tooling
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Generated build / release output
+dist/
+build/
+release/
+releases/
+*.zip
+*.crx
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# Test / coverage artifacts
+coverage/
+.nyc_output/
+
+# Reports / downloads / machine-local output
+report/
+reports/
+download/
+downloads/
+Downloads/
+history-audit.json
+*report*.json
+*_report.json
+
+# Local scratch / backups
+scratch/
+backup/
+backups/
+local/
+.local/
+
+# Local Git configuration must never be committed
+.gitconfig
+
+# Keep source assets and canonical factory data tracked
+!data/
+!data/**
+!icons/
+!icons/**
