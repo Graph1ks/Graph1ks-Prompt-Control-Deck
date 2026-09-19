@@ -1,34 +1,53 @@
+> This repository is owner-controlled solo development. Unsolicited external code contributions are not accepted. This template is primarily for owner/authorized-collaborator change branches.
+
 ## Summary
 
-Describe what this pull request changes and why.
+Describe what this change does and why.
 
 ## Scope
 
-- [ ] This PR is focused and does not include unrelated refactors.
-- [ ] I did not change licensing, permissions, telemetry/network behavior, factory data, or version numbers unless explicitly required by this PR.
+- [ ] This change is coherent and does not include unrelated refactors.
+- [ ] Licensing, permissions, telemetry/network behavior, factory data, and version numbers changed only when explicitly required.
 
 ## Validation
 
 Check all that apply:
 
-- [ ] `manifest.json` is valid JSON.
+- [ ] manifest.json is valid JSON.
 - [ ] Modified JavaScript passes syntax checks.
+- [ ] python scripts/repo_audit.py passes.
 - [ ] The extension loads unpacked without a blocking error.
-- [ ] Dark Mode was checked.
-- [ ] Light Mode was checked.
+- [ ] Dark Mode was checked where relevant.
+- [ ] Light Mode was checked where relevant.
 - [ ] DE/EN behavior was considered where relevant.
 - [ ] Public/Private Vault behavior was considered where relevant.
 - [ ] No duplicate HTML IDs were introduced.
+- [ ] Suno integration was smoke-tested where relevant.
 
-## Contributor License Agreement
+## Cost / dependency gate
 
-External code contributions require acceptance of `CLA.md`.
+- [ ] No required paid/billable production dependency was introduced.
+- [ ] New non-trivial dependencies were reviewed and justified.
+- [ ] No new external dependency was added.
 
-Please post the following exact statement as a PR comment before merge:
+## License / data gate
 
-`I have read and agree to CLA.md for this contribution.`
+- [ ] New dependencies/assets/data sources are license/rights compatible.
+- [ ] Factory/provenance rules were preserved.
+- [ ] No new external licensed material was added.
 
-- [ ] I understand that CLA acceptance is required before this PR can be merged.
+## Security / privacy gate
+
+- [ ] No credentials/secrets/private session data were added.
+- [ ] No unnecessary private local paths or personal data were added.
+- [ ] No raw/sensitive user-AI conversation content was persisted.
+- [ ] Permission/network/privacy impact was reviewed where relevant.
+
+## Continuity
+
+- [ ] STATUS.md / docs/HANDOVER.md were updated if project state materially changed.
+- [ ] docs/DECISIONS.md was updated for expensive-to-rediscover decisions.
+- [ ] CHANGELOG.md was updated when the change is meaningfully user/release relevant.
 
 ## Screenshots / notes
 

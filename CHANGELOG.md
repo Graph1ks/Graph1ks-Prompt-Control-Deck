@@ -8,12 +8,17 @@ All notable project changes should be documented here.
 
 - Public repository established as the authoritative project source.
 - Added PolyForm Noncommercial 1.0.0 licensing structure and separate commercial licensing policy.
-- Added contribution rules, CLA requirements, security policy and repository governance.
-- Imported the real v1.3.4 extension source directly into `main`.
-- Added the canonical factory assets under `data/`, including the gzip-compressed Public Vault.
-- Added permanent GitHub Actions validation in `.github/workflows/ci.yml`.
+- Defined the repository as public, owner-controlled solo development; unsolicited external code contributions are not accepted.
+- Kept Issues available as feedback/input while explicitly preventing AI agents from treating public feedback as an automatic work queue.
+- Added PROJECT.md, STATUS.md, durable engineering decisions, repository-visibility policy, dependency review, and release checklist.
+- Added conversation-to-repository hygiene so project artifacts retain decisions/engineering facts rather than raw chats or sensitive conversational content.
+- Added reusable dependency-free repository publication audit at scripts/repo_audit.py.
+- Imported the real v1.3.4 extension source directly into main.
+- Added canonical factory assets under data/, including the gzip-compressed Public Vault.
+- Added permanent GitHub Actions validation in .github/workflows/ci.yml.
 - Added branch/change batching rules to avoid branch-per-minor-edit churn.
 - Added installation, architecture, development and release documentation.
+- Removed the external CLA/contribution workflow to match the solo-development model.
 - Removed the temporary Actions smoke test after validating runner availability.
 - Removed the one-time v1.3.4 source importer after successful source materialization.
 
@@ -21,7 +26,7 @@ All notable project changes should be documented here.
 
 Current development baseline.
 
-- Restored compact full-width `FILL MORE OPTIONS` sidebar placement.
+- Restored compact full-width FILL MORE OPTIONS sidebar placement.
 - Added support for the gzip-compressed Public Vault factory asset.
 - Restored the compact, rounded Suno metadata-chip presentation.
 - Continued Dark/Light theme fixes and UI regression cleanup from the 1.3.x series.

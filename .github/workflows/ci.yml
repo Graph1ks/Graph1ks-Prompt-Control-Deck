@@ -39,7 +39,8 @@ jobs:
             'i18n.js', 'theme-preload.js',
             'icons/icon16.png', 'icons/icon32.png', 'icons/icon48.png', 'icons/icon128.png',
             'data/GRAPH1KS_GENRE_MAP_FACTORY.json',
-            'data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz'
+            'data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz',
+            'scripts/repo_audit.py'
           ];
           for (const file of required) {
             if (!fs.existsSync(file) || fs.statSync(file).size === 0) fail(`Missing/empty required file: ${file}`);
@@ -67,8 +68,6 @@ jobs:
           const resources = (manifest.web_accessible_resources || []).flatMap(x => x.resources || []);
           if (!resources.includes('data/*')) fail('manifest must expose data/*');
 
-          // Provenance invariant: third-party artist/song reference metadata must
-          // remain outside the Suno page's generation/autofill implementation.
           for (const field of ['reference_artist', 'reference_song']) {
             if (content.includes(field)) {
               fail(`${field} must remain provenance-only and outside content.js autofill logic`);
@@ -129,63 +128,15 @@ jobs:
           print(f'HTML/data/icons passed; Public Vault entries={count}; email findings=0')
           PY
 
-      - name: Protect public repository privacy
+      - name: Repository publication audit
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
           ACTOR: ${{ github.actor }}
         run: |
           set -euo pipefail
-          python3 <<'PY'
-          import pathlib, re, subprocess
 
-          files=subprocess.check_output(['git','ls-files','-z']).split(b'\0')
-          forbidden=[]; secret_hits=[]; private_email_hits=[]; local_path_hits=[]
-          archive_exts=('.zip','.7z','.rar','.tar','.tgz','.tar.gz')
-          db_exts=('.db','.db3','.sqlite','.sqlite3')
-          blocked_dirs={'downloads','download','reports','report-output','backup','backups','scratch'}
-          secret_patterns={
-              'github-token': re.compile(rb'\bgh[pousr]_[A-Za-z0-9_]{20,}\b'),
-              'github-pat': re.compile(rb'\bgithub_pat_[A-Za-z0-9_]{20,}\b'),
-              'openai-key': re.compile(rb'\bsk-[A-Za-z0-9_-]{20,}\b'),
-              'aws-access-key': re.compile(rb'\bAKIA[0-9A-Z]{16}\b'),
-              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'),
-          }
-          private_mail=b'graph1ks' + b'@outlook.com'
-          win_rx=re.compile(rb'(?i)[A-Z]:\\' + rb'Users\\' + rb'[^\\\r\n]+')
-          mac_rx=re.compile(rb'/' + rb'Users/' + rb'[^/\r\n]+/')
-          linux_rx=re.compile(rb'/' + rb'home/' + rb'(?!runner(?:/|\b))[^/\r\n]+/')
-          local_path_patterns=[win_rx,mac_rx,linux_rx]
-
-          for raw in files:
-              if not raw: continue
-              path=raw.decode('utf-8','surrogateescape')
-              p=pathlib.PurePosixPath(path); name=p.name.lower(); parts={x.lower() for x in p.parts}
-              if name == '.env' or (name.startswith('.env.') and name != '.env.example'):
-                  forbidden.append(path)
-              elif name.endswith(('.pem','.p12','.pfx','.db','.db3','.sqlite','.sqlite3')):
-                  forbidden.append(path)
-              elif name.endswith('.key') and not name.endswith('.pub.key'):
-                  forbidden.append(path)
-              elif name.endswith(archive_exts) or parts & blocked_dirs:
-                  forbidden.append(path)
-
-              try: data=pathlib.Path(path).read_bytes()
-              except OSError: continue
-              if b'\0' in data[:8192]: continue
-              if private_mail in data.lower(): private_email_hits.append(path)
-              for label,rx in secret_patterns.items():
-                  if rx.search(data): secret_hits.append((path,label))
-              if any(rx.search(data) for rx in local_path_patterns): local_path_hits.append(path)
-
-          problems=[]
-          if forbidden: problems.append('forbidden tracked paths: '+', '.join(sorted(set(forbidden))))
-          if secret_hits: problems.append('secret-like patterns: '+repr(sorted(set(secret_hits))))
-          if private_email_hits: problems.append('private maintainer e-mail in tracked text: '+', '.join(sorted(set(private_email_hits))))
-          if local_path_hits: problems.append('machine-local absolute paths: '+', '.join(sorted(set(local_path_hits))))
-          if problems: raise SystemExit('\n'.join(problems))
-          print('Tracked-tree privacy/secret scan passed')
-          PY
+          python3 scripts/repo_audit.py
 
           test ! -e data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json
           test ! -e v134-source-only.tar.gz

@@ -14,6 +14,8 @@ Current development baseline: **v1.3.4**.
 
 This public repository is the authoritative project source for code, documentation, licensing, factory data and future releases.
 
+Development is **owner-controlled solo development**. Public visibility is not an invitation for external code contributions.
+
 ## What it does
 
 GRAPH1KS Prompt Control Deck provides a local Vault workflow around Suno, including:
@@ -41,31 +43,31 @@ See [docs/INSTALLATION.md](docs/INSTALLATION.md) for full instructions.
 Short version:
 
 1. Clone or download this repository.
-2. Open `chrome://extensions`.
+2. Open chrome://extensions.
 3. Enable **Developer mode**.
 4. Choose **Load unpacked**.
-5. Select the repository folder containing `manifest.json`.
+5. Select the repository folder containing manifest.json.
 6. Open Suno.
 
 ## Factory data
 
-Bundled application data lives under `data/`:
+Bundled application data lives under data/:
 
-```text
+~~~text
 data/
 ├── GRAPH1KS_GENRE_MAP_FACTORY.json
 └── GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz
-```
+~~~
 
 The Public Vault is deliberately stored as gzip-compressed JSON and decompressed client-side by the extension. The repository and release package should not contain an unnecessary uncompressed duplicate.
 
 The current factory Vault contains more than 10,000 prompt/song entries. See [data/README.md](data/README.md) for data-specific rules and [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) for the research/generation pipeline, reference-field semantics, third-party identifiers, and licensing scope.
 
-`reference_artist` and `reference_song` are provenance/catalog metadata only; they identify the research target and are not intended to be used as artist-name or song-title imitation instructions in the song-generation workflow.
+reference_artist and reference_song are provenance/catalog metadata only; they identify the research target and are not intended to be used as artist-name or song-title imitation instructions in the song-generation workflow.
 
 ## Repository layout
 
-```text
+~~~text
 manifest.json
 background.js
 content.js
@@ -77,58 +79,50 @@ theme-preload.js
 icons/
 data/
 docs/
+scripts/
 .github/
-```
+~~~
 
 Architecture details are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Development
 
-Read these before making non-trivial changes:
+Read these before non-trivial work:
 
-- [AGENTS.md](AGENTS.md) — authoritative project rules for coding agents and maintainers;
-- [CONTRIBUTING.md](CONTRIBUTING.md) — contribution and pull-request rules;
+- [AGENTS.md](AGENTS.md) — authoritative developer/agent contract;
+- [PROJECT.md](PROJECT.md) — project mode, scope, licensing and engineering constraints;
+- [STATUS.md](STATUS.md) — compact current operational state;
+- [docs/HANDOVER.md](docs/HANDOVER.md) — continuation context;
+- [docs/DECISIONS.md](docs/DECISIONS.md) — durable engineering decisions;
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — practical development workflow;
-- [docs/RELEASING.md](docs/RELEASING.md) — release discipline and versioning;
-- [docs/HANDOVER.md](docs/HANDOVER.md) — current project state and next-action context;
+- [docs/RELEASING.md](docs/RELEASING.md) — release discipline;
 - [docs/DATA_PROVENANCE.md](docs/DATA_PROVENANCE.md) — Public Vault provenance and third-party-reference policy.
 
 ### CI
 
-The repository uses one compact GitHub Actions validation workflow: `.github/workflows/ci.yml`.
+The repository uses one compact GitHub Actions validation workflow: .github/workflows/ci.yml.
 
-It validates:
+It validates extension/runtime invariants, factory data, repository hygiene, and the reusable publication audit.
 
-- Manifest V3 structure and required files;
-- synchronized extension version markers;
-- JavaScript syntax;
-- duplicate HTML IDs;
-- bundled Genre Map JSON;
-- gzip Public Vault JSON and absence of e-mail-like values;
-- icon PNG signatures;
-- gzip loading support in the runtime source;
-- the full-width `FILL MORE OPTIONS` regression guard;
-- absence of temporary bootstrap/scratch artifacts;
-- tracked-tree privacy/secret hygiene;
-- privacy-safe maintainer Author/Committer e-mail metadata on direct maintainer pushes.
-
-CI runs on pushes to `main`, pull requests targeting `main`, and manual dispatch. `concurrency` with cancellation prevents stale overlapping runs.
+CI runs on pushes to main, pull requests targeting main, and manual dispatch.
 
 ## Branching and change batching
 
-Do not create a branch for every tiny edit. Related changes should be grouped into one coherent task branch / pull request when a branch is needed. Small owner-authorized maintenance may be committed directly to `main`.
+Do not create a branch for every tiny edit. Related changes should be grouped into one coherent task branch/pull request when isolation is useful. Small owner-authorized maintenance may be committed directly to main.
 
-The detailed policy is in [AGENTS.md](AGENTS.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+See AGENTS.md and docs/DEVELOPMENT.md.
 
 ## Privacy
 
-The project is local-first by design. Do not introduce analytics, advertising, background tracking, hidden network requests, prompt/lyrics collection or cloud synchronization without explicit maintainer approval.
+The project is local-first by design. Do not introduce analytics, advertising, background tracking, hidden network requests, prompt/lyrics collection or cloud synchronization without explicit owner approval.
 
 See [SECURITY.md](SECURITY.md) and [AGENTS.md](AGENTS.md).
 
-## Contributions
+## Feedback and code contributions
 
-Code contributions require acceptance of the project [Contributor License Agreement](CLA.md). This preserves Graph1ks' ability to distribute the project under the public noncommercial license while also offering separate commercial licenses.
+Issues are available for bug reports, compatibility reports, suggestions, and user feedback.
+
+This is **not a community-development repository**. Unsolicited external code contributions and pull requests are not accepted.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 

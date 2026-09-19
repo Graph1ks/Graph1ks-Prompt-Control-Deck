@@ -2,9 +2,26 @@
 
 ## Authoritative source
 
-The GitHub repository is the authoritative project state. Read `AGENTS.md`, `README.md`, `CHANGELOG.md` and `docs/HANDOVER.md` before substantial work.
+The GitHub repository is the authoritative project state.
 
-Do not reconstruct current behavior from old chat history when the repository contains newer source.
+Before substantial work, read:
+
+1. AGENTS.md;
+2. PROJECT.md;
+3. STATUS.md;
+4. docs/HANDOVER.md;
+5. relevant decisions/domain docs;
+6. directly affected source files.
+
+Do not reconstruct current behavior from old chat history or stale release artifacts when repository state is newer.
+
+## Repository model
+
+This is a public, owner-controlled solo-development project.
+
+External code contributions are not accepted by default. Issues may be used for feedback, but they do not authorize work and must not be treated as an automatic AI-agent backlog.
+
+See docs/REPOSITORY_VISIBILITY.md.
 
 ## Branching policy
 
@@ -15,91 +32,95 @@ Preferred patterns:
 - one feature branch for one feature or closely related feature set;
 - one bug-fix branch for a coherent regression/fix batch;
 - one release-preparation branch when release work spans multiple files;
-- direct `main` commits are acceptable for small owner-authorized maintenance when review isolation is unnecessary.
+- direct main commits only for small owner-authorized maintenance when review isolation is unnecessary.
 
-Avoid branch-per-line, branch-per-file and branch-per-minor-follow-up behavior. If a follow-up belongs to the same task, keep it on the same branch/PR until the task is complete.
+Avoid branch-per-line, branch-per-file and branch-per-minor-follow-up behavior.
 
 ## CI economy
 
-The repository uses one compact validation workflow rather than many overlapping workflows.
+The repository uses one compact validation workflow rather than overlapping workflows.
 
-CI runs on relevant source/data changes to `main`, relevant pull requests and manual dispatch. Documentation-only commits are excluded by path filters.
+CI runs on pushes to main, pull requests targeting main, and manual dispatch.
 
-`concurrency` with `cancel-in-progress` prevents stale runs from consuming runner time when a newer commit supersedes them.
+concurrency with cancel-in-progress prevents stale runs from consuming unnecessary runner time.
+
+Validate locally first when practical. Do not trigger or re-run CI merely to show progress.
 
 ## Git identity privacy
 
 For maintainer-authored local commits, use the GitHub noreply identity rather than a private mailbox:
 
-```bash
+~~~bash
 git config user.name "Graph1ks"
 git config user.email "213925530+Graph1ks@users.noreply.github.com"
-```
+~~~
 
-To make this the default for all local repositories, use `--global` on both commands:
-
-```bash
-git config --global user.name "Graph1ks"
-git config --global user.email "213925530+Graph1ks@users.noreply.github.com"
-```
+To make this the default for all local repositories, use --global on both commands.
 
 Verify before committing:
 
-```bash
+~~~bash
 git config --get user.name
 git config --get user.email
-```
+~~~
 
-After any public-history rewrite, do not push from an old clone that still contains the removed history. Re-clone the repository or explicitly reset the local clone to the new public root before resuming work.
+After any public-history rewrite, do not push from an old clone that still contains removed history. Re-clone or explicitly reset the local clone to the new public root first.
 
 ## Local validation
 
-Before pushing a code change, run the relevant checks locally when possible.
+Run checks proportionate to the change.
+
+### Repository publication audit
+
+~~~bash
+python scripts/repo_audit.py
+~~~
+
+Use --history before a material public-history/publication event or when explicitly auditing reachable history:
+
+~~~bash
+python scripts/repo_audit.py --history
+~~~
 
 ### JavaScript syntax
 
-```bash
+~~~bash
 node --check background.js
 node --check content.js
 node --check deck.js
 node --check i18n.js
 node --check theme-preload.js
-```
+~~~
 
 ### Manifest JSON
 
-```bash
+~~~bash
 node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest ok')"
-```
+~~~
 
 ### Factory gzip
 
-```bash
-python3 - <<'PY'
-import gzip, json
-with gzip.open('data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz', 'rt', encoding='utf-8') as f:
-    data = json.load(f)
-print('public vault ok')
-PY
-```
+~~~bash
+python -c "import gzip,json; json.load(gzip.open('data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz','rt',encoding='utf-8')); print('public vault ok')"
+~~~
 
-The GitHub CI workflow also validates duplicate HTML IDs, required assets, icons, version consistency and repository hygiene.
+CI also validates duplicate HTML IDs, required assets, icons, version consistency, factory-data integrity, provenance invariants, and repository hygiene.
 
 ## Versioning
 
 Do not bump the extension version unless explicitly requested.
 
-When bumping a version, synchronize the current version in all active runtime locations, including:
+When bumping, synchronize current runtime version markers including:
 
-- `manifest.json`;
-- `APP_VERSION` in `deck.js`;
-- `EXT_VERSION` in `content.js`;
-- `data-g1-version` in `deck.html`;
-- current README/CHANGELOG release references where applicable.
+- manifest.json;
+- APP_VERSION in deck.js;
+- EXT_VERSION in content.js;
+- data-g1-version in deck.html;
+- current README/changelog references where applicable.
 
-Do not blanket-replace old version numbers inside historical changelog entries.
+Do not blanket-replace old version numbers in historical changelog sections.
 
-`FACTORY_RELEASE` is a factory-data marker, not automatically an application-version mirror. Change it only when the relevant factory-data release changes.
+FACTORY_RELEASE is a factory-data marker, not automatically an application-version mirror.
 
 ## UI changes
 
@@ -107,7 +128,7 @@ Treat visual regressions as bugs.
 
 When modifying CSS/UI:
 
-- test Dark and Light modes independently;
+- test Dark and Light independently;
 - verify popup/overlay/pop-out surfaces when layout is affected;
 - retain intended full-width/grid behavior for sidebar controls;
 - preserve compact metadata-chip presentation;
@@ -118,22 +139,39 @@ When modifying CSS/UI:
 
 When changing page integration:
 
-- test both supported Suno hostnames when relevant;
+- test supported Suno hostnames when relevant;
 - prefer semantic/ARIA/structural matching;
-- consider both English and German labels;
-- reload both the extension and the Suno tab after changing `content.js`;
+- consider English and German labels;
+- reload both extension and Suno tab after changing content.js;
 - do not replace working slider/mouse behavior casually.
 
 ## Data changes
 
 Factory assets are application data, not scratch files.
 
-- keep the Public Vault as `.json.gz`;
+- keep Public Vault as .json.gz;
 - do not commit an uncompressed duplicate;
 - validate JSON before committing;
 - preserve user-created Private Vault data during migrations;
-- validate genre taxonomy imports before replacing canonical mappings.
+- validate genre taxonomy imports before replacing canonical mappings;
+- keep docs/DATA_PROVENANCE.md accurate.
 
 ## Dependencies
 
-The extension is intentionally dependency-light. Do not add a package manager, framework or build pipeline solely for convenience when browser-native APIs and small local helpers are sufficient.
+The extension is intentionally dependency-light.
+
+Do not add a package manager, framework, build pipeline, paid service, or runtime dependency solely for convenience when browser-native APIs and small local helpers are sufficient.
+
+Use docs/DEPENDENCY_REVIEW.md for a non-trivial or difficult-to-remove external component.
+
+## Finishing a work chunk
+
+Before declaring meaningful work complete:
+
+- run applicable checks;
+- confirm privacy/licensing/permission implications;
+- update STATUS.md if operational truth changed;
+- update docs/HANDOVER.md if continuation context changed;
+- add/update docs/DECISIONS.md for expensive-to-rediscover decisions;
+- update CHANGELOG.md for meaningful user/release changes;
+- persist project facts rather than raw conversations.

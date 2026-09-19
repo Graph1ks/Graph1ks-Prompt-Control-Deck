@@ -6,6 +6,8 @@ labels: enhancement
 assignees: ""
 ---
 
+> Issues are a feedback channel for this owner-controlled solo-development project. Suggestions do not become roadmap commitments automatically and do not invite unsolicited code pull requests.
+
 ## Problem / use case
 
 What problem should this solve?
@@ -28,8 +30,8 @@ Does this require changes to stored data, factory data, permissions, imports, ex
 
 ## Commercial / licensing impact
 
-Does this introduce third-party code, assets, services, APIs, or licenses? If yes, list them.
+Does this introduce third-party code, assets, services, APIs, datasets, or licenses? If yes, list them.
 
 ## Additional context
 
-Mockups, screenshots or implementation notes are welcome.
+Mockups, screenshots, or implementation notes are welcome. Do not include secrets or private user content.

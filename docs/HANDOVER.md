@@ -1,124 +1,176 @@
 # Project Handover
 
-## Authoritative repository
+This document contains the durable context required to continue GRAPH1KS Prompt Control Deck without relying on prior chat history.
 
-`Graph1ks/Graph1ks-Prompt-Control-Deck` is the authoritative project source for future work.
+## Current objective
 
-Agents and contributors must read `AGENTS.md` first and use repository state rather than reconstructing project state from old conversations or stale release packages.
+Maintain the v1.3.4 runtime baseline while continuing development under a public, owner-controlled solo-development model with explicit privacy, provenance, licensing, and continuity rules.
 
-## Current baseline
+## What was just completed
 
-Current development baseline: **v1.3.4**.
+Repository governance was aligned with the shared Graph1ks repository template without changing extension runtime behavior.
 
-The real extension source is now committed directly to `main`, together with the canonical factory assets and project documentation. No bootstrap/materialization workflow is required for normal development.
+The alignment adds:
 
-## Repository status
+- PROJECT.md as the durable project contract;
+- STATUS.md as compact operational state;
+- docs/DECISIONS.md for durable engineering decisions;
+- docs/REPOSITORY_VISIBILITY.md for the public solo-development model;
+- docs/DEPENDENCY_REVIEW.md and docs/RELEASE_CHECKLIST.md;
+- scripts/repo_audit.py as the reusable publication/privacy audit;
+- explicit conversation-to-repository hygiene;
+- explicit user-trigger-only behavior for Issues/public feedback;
+- removal of the external-contribution/CLA workflow.
 
-Present and authoritative on `main`:
+## Current implementation state
 
-```text
-manifest.json
-background.js
-content.js
-deck.html
-deck.css
-deck.js
-i18n.js
-theme-preload.js
-icons/
-data/
-docs/
-.github/workflows/ci.yml
-```
+Current runtime baseline: **v1.3.4**.
 
-The one-time v1.3.4 import workflow removed itself after successfully materializing the source. The earlier Actions smoke-test workflow has also been removed.
+The real extension source and canonical factory assets are committed directly to the repository.
 
-## Factory data
+Primary runtime behavior remains:
 
-Canonical bundled assets:
+- gzip Public Vault loading;
+- Public and Private Vault workflows;
+- Suno Retrieve/Fill integration;
+- manual Editor/Draft workflows;
+- compact Suno metadata chips;
+- full-width FILL MORE OPTIONS sidebar placement;
+- Dark/Light appearance;
+- DE/EN behavior;
+- guided onboarding and persisted local settings.
 
-```text
-data/GRAPH1KS_GENRE_MAP_FACTORY.json
-data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz
-```
+No runtime feature is intentionally changed by the governance migration.
 
-The Public Vault remains gzip-compressed in the repository and release package. The runtime references that exact `.json.gz` asset and uses browser-native decompression support.
+## Important files / entry points
 
-Do not add an uncompressed duplicate unless explicitly required for compatibility.
+Runtime:
 
-## Current v1.3.4 behavior/fixes
+- manifest.json
+- background.js
+- content.js
+- deck.html
+- deck.css
+- deck.js
+- i18n.js
+- theme-preload.js
 
-The v1.3.4 baseline includes:
+Factory data:
 
-- gzip Public Vault factory loading;
-- compact Suno metadata-chip presentation;
-- restored full-width `FILL MORE OPTIONS` sidebar placement;
-- Dark/Light regression cleanup;
-- persistent DE/EN and theme behavior from the 1.3.x series;
-- guided onboarding and existing Vault/Retrieve/Fill workflows.
+- data/GRAPH1KS_GENRE_MAP_FACTORY.json
+- data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz
 
-## CI
+Project/continuity:
 
-Permanent validation lives at:
+- AGENTS.md
+- PROJECT.md
+- STATUS.md
+- docs/DECISIONS.md
+- docs/ARCHITECTURE.md
+- docs/DATA_PROVENANCE.md
+- docs/DEVELOPMENT.md
+- docs/RELEASING.md
+- scripts/repo_audit.py
+- .github/workflows/ci.yml
 
-```text
-.github/workflows/ci.yml
-```
+## Decisions already made
 
-The first permanent validation run completed successfully.
+- Repository mode is PUBLIC — owner-controlled solo development.
+- External code contributions are not accepted by default.
+- Issues are feedback/input only and are not an automatic AI-agent work queue.
+- Public terms remain PolyForm Noncommercial License 1.0.0 with separate written commercial licensing.
+- The product remains local-first and dependency-light.
+- Public Vault stays gzip-compressed.
+- reference_artist and reference_song remain provenance/catalog metadata, not generation inputs.
+- Version bumps happen only when explicitly requested.
 
-CI currently checks:
+See docs/DECISIONS.md for durable rationale.
 
-- Manifest V3 structure and required files;
-- synchronized app version markers;
-- JavaScript syntax;
-- duplicate HTML IDs;
-- Genre Map JSON validity;
-- gzip Public Vault JSON validity;
-- icon PNG signatures;
-- runtime gzip factory references/decompression support;
-- full-width `FILL MORE OPTIONS` regression guard;
-- absence of bootstrap/scratch/uncompressed factory artifacts.
+## Known problems / risks
 
-CI runs on relevant source/data changes to `main`, relevant pull requests and manual dispatch. Documentation-only commits are excluded by path filters. Stale runs are cancelled through workflow concurrency settings.
+- Suno is an external UI integration and selectors can break when Suno changes DOM structure or localization.
+- Browser-interaction changes still require real Chromium/Suno smoke testing; static CI cannot fully verify live integration.
+- GitHub-host settings such as Wiki and Projects cannot be enforced by repository files. PROJECT.md defines the target policy and host settings should be verified after changes.
+- Factory-data changes require additional provenance, migration, and user-data care.
 
-## Development workflow
+## Next concrete work
 
-Do not create a branch for every tiny change.
+Work only on the next task explicitly requested by Graph1ks.
 
-Bundle related work into one coherent branch/PR when isolation is useful. Follow-up fixes belonging to the same task should remain in that task's branch/PR until complete. Small owner-authorized maintenance may go directly to `main`.
+Do not proactively scan Issues or public feedback for implementation work.
 
-See `docs/DEVELOPMENT.md`.
+For each new task:
 
-## Release discipline
+1. read AGENTS.md, PROJECT.md, STATUS.md, and this handover;
+2. inspect affected code/data and relevant decisions/docs;
+3. make one coherent change;
+4. run the applicable local checks and repository audit;
+5. verify live Chromium/Suno behavior when required;
+6. update STATUS.md, this handover, decisions, and changelog when project state materially changes.
 
-Before publishing a release:
+## Verification
 
-- keep active application-version markers synchronized;
-- do not rewrite historical changelog versions;
-- change factory release markers only when factory data actually changes;
-- require green CI on the intended source commit;
-- perform manual Chromium/Suno testing for integration/UI changes;
-- verify release ZIP integrity and contents;
-- do not include scratch/bootstrap material or an uncompressed Public Vault duplicate.
+### Commands
 
-See `docs/RELEASING.md`.
+Repository/publication audit:
 
-## Licensing model
+~~~bash
+python scripts/repo_audit.py
+~~~
 
-- Public/noncommercial: PolyForm Noncommercial License 1.0.0.
-- Commercial use: separate written license from Graph1ks.
-- External code contributions: CLA acceptance required before merge.
+JavaScript syntax:
 
-Do not weaken or replace this licensing model without explicit instruction from Graph1ks.
+~~~bash
+node --check background.js
+node --check content.js
+node --check deck.js
+node --check i18n.js
+node --check theme-preload.js
+~~~
 
-## Next development action
+Manifest:
 
-Future work should start from the current `main` branch and the documented v1.3.4 baseline. For each new task:
+~~~bash
+node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest ok')"
+~~~
 
-1. read `AGENTS.md` and this handover;
-2. inspect the directly affected source files;
-3. keep the change scoped/batched coherently;
-4. run local checks where practical;
-5. rely on the permanent CI workflow for repository-level validation;
-6. update `CHANGELOG.md` and this handover when project state materially changes.
+Public Vault gzip:
+
+~~~bash
+python -c "import gzip,json; json.load(gzip.open('data/GRAPH1KS_PUBLIC_VAULT_FACTORY.json.gz','rt',encoding='utf-8')); print('public vault ok')"
+~~~
+
+### Expected result
+
+- publication audit passes;
+- JavaScript syntax checks pass;
+- manifest parses;
+- gzip Public Vault parses;
+- repository CI is green on the intended source commit;
+- manual UI/Suno checks pass when relevant to the change.
+
+## Important context / traps
+
+- Do not bump the app version while performing unrelated maintenance.
+- Do not mirror every app release into FACTORY_RELEASE.
+- Do not add an uncompressed Public Vault copy.
+- Do not reintroduce community-contribution/CLA language unless the repository model explicitly changes.
+- Do not persist raw user/AI conversations as project history.
+- Do not infer current behavior from old release packages or chats when repository source is newer.
+
+## Local / generated state
+
+Local browser profiles, extension state, Vault contents, logs, generated reports, scratch archives, and machine-specific paths are not authoritative repository state and should not be committed unless explicitly required, sanitized, and appropriate for publication.
+
+## Resume instruction
+
+A new developer or AI agent should:
+
+1. read AGENTS.md;
+2. read PROJECT.md;
+3. read STATUS.md;
+4. read this handover;
+5. read docs/DECISIONS.md plus the relevant domain docs;
+6. inspect current code/data and verification before editing.
+
+If this handover conflicts with current code/tests, reproducible repository state is authoritative. Correct the handover as part of the next coherent work chunk.
