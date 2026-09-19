@@ -6,6 +6,8 @@ labels: bug
 assignees: ""
 ---
 
+> Issues are a feedback channel for this owner-controlled solo-development project. Filing an Issue does not create a roadmap commitment or invite a code pull request. Do not post exploitable security details here; use SECURITY.md.
+
 ## Version
 
 Extension version:
@@ -43,7 +45,7 @@ What should have happened instead?
 
 ## Screenshots / console output
 
-Add screenshots or relevant console output. Remove private prompts, lyrics, identifiers, URLs, tokens, or other sensitive information before posting.
+Add screenshots or relevant console output. Remove private prompts, lyrics, identifiers, URLs, tokens, local paths, or other sensitive information before posting.
 
 ## Data impact
 
